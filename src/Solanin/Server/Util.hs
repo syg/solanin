@@ -16,7 +16,7 @@ data Cookie = Cookie
   { cookieVersion :: String
   , cookieName    :: String
   , cookieValue   :: String
-  , cookieMaxAge  :: Int
+  , cookieMaxAge  :: Maybe Int
   , cookiePath    :: Maybe FilePath
   , cookieDomain  :: Maybe String
   } deriving (Show, Eq)
@@ -37,11 +37,17 @@ withStatus (rcode, rmsg) (_, _, h, enum) = (rcode, rmsg, h, enum)
 packHeaders :: [(String, String)] -> [(ByteString, ByteString)]
 packHeaders hs = [ (C.pack a, C.pack b) | (a, b) <- hs ]
 
+nothingHeaders :: [(ByteString, ByteString)]
+nothingHeaders = packHeaders [("Content-Length", "0")]
+
 strHeaders :: String -> [(ByteString, ByteString)]
 strHeaders s = packHeaders hs
   where
-    hs = [("Content-Type", "text/plain"),
+    hs = [("Content-Type",   "text/plain"),
           ("Content-Length", show (C.length $ C.pack s))]
+
+sendNothing :: Enumerator
+sendNothing = const return
 
 sendString :: String -> Enumerator
 sendString s = sendBytes (C.pack s)
@@ -78,15 +84,14 @@ notFound = (404,
 seeOther :: String -> (Int, ByteString, Headers, Enumerator)
 seeOther l = (303,
               C.pack "See Other",
-              packHeaders [("Content-Length", "0"),
-                           ("Location", l)],
-              sendString "")
+              nothingHeaders ++ (packHeaders [("Location", l)]),
+              sendNothing)
 
 notModified :: (Int, ByteString, Headers, Enumerator)
 notModified = (304,
                C.pack "Not Modified",
-               strHeaders "",
-               sendString "")
+               nothingHeaders,
+               sendNothing)
 
 serverError :: String -> (Int, ByteString, Headers, Enumerator)
 serverError msg = (500,
@@ -94,22 +99,21 @@ serverError msg = (500,
                    strHeaders msg,
                    sendString msg)
 
-mkCookie :: Int -> (String, String) -> Cookie
+mkCookie :: Maybe Int -> (String, String) -> Cookie
 mkCookie a (k, v) = Cookie "1" k v a (Just "/") Nothing
 
 cookieHeader :: Cookie -> (ByteString, ByteString)
 cookieHeader c = (C.pack "Set-Cookie", C.pack $ intercalate "; " props)
   where
-    age = cookieMaxAge c
-
-    val    = pair (cookieName c) (cookieValue c)
-    maxAge = pair "Max-Age" (if age < 0 then "" else show age)
-    ver    = pair "Version" (cookieVersion c)
+    val    = pair (cookieName c) (quote (cookieValue c))
+    maxAge = fmap (pair "Max-Age") (fmap show (cookieMaxAge c))
+    ver    = pair "Version" (quote (cookieVersion c))
     path   = fmap (pair "Path") (cookiePath c)
-    domain = fmap (pair "Domain") (cookieDomain c)
-    props  = [val, maxAge, ver] ++ catMaybes [path, domain]
+    domain = fmap (pair "Domain") (fmap quote (cookieDomain c))
+    props  = [val, ver] ++ catMaybes [maxAge, path, domain]
 
-    pair k v = k ++ "=\"" ++ v ++ "\""
+    quote s  = "\"" ++ s ++ "\""
+    pair k v = k ++ "=" ++ v
 
 parseCookies :: Environment -> [Cookie]
 parseCookies env =
@@ -132,16 +136,17 @@ parseCookies env =
       d <- optionMaybe (try (semi >> reserved "$Domain"))
       -- XXX doesn't check Domain
       return $ case p of
-        Nothing -> Just (Cookie ver k v 0 p d)
+        Nothing -> Just (Cookie ver k v Nothing p d)
         Just p' -> if (C.pack p') `C.isPrefixOf` (pathInfo env) then
-                     Just (Cookie ver k v 0 p d)
+                     Just (Cookie ver k v Nothing p d)
                      else Nothing
 
     reserved r = string r >> eq >> value >>= return
     comma      = between spaces space (char ',')
     semi       = between spaces space (char ';')
     name       = many1 alphaNum
-    value      = between (char '"') (char '"') $ many1 alphaNum
+    quote      = option '"' (char '"')
+    value      = between quote quote $ many1 alphaNum
     eq         = between spaces spaces $ char '='
 
 parseCookies' :: Environment -> [(String, String)]

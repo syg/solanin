@@ -467,7 +467,7 @@ function Solanin() {
 
 	this.doOptions = function() {
 		var fc = $("#footer-content");
-		$(".tabs > a[href!=/logout]").click(function() {
+		$(".tabs > a[href!=/_x]").click(function() {
 			var a = $(this);
 			if(!fc.html() || !a.hasClass("selected")) {
 				$.get(a.attr("href"), function(data) {

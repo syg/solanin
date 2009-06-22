@@ -36,7 +36,7 @@ solanin =
         -- invalid sessions are removed
         authenticated' False (return seeLogin) removeSession,
         -- after this point we must be logged in
-        path "/_l" logout,
+        path "/_x" logout,
         path "/_c" configHandlers,
         path "/_p" passwdHandlers,
         method Get renderPlayer,
@@ -45,7 +45,7 @@ solanin =
     seeSetup = seeOther "/_c"
     seeLogin = seeOther "/_l"
     removeSession = do
-      let cookie = cookieHeader (mkCookie 0 ("sid", ""))
+      let cookie = cookieHeader (mkCookie (Just 0) ("sid", ""))
       return (withHeaders [cookie] seeLogin)
 
     loginHandlers  = msum [method Get (renderLogin False),
@@ -91,7 +91,7 @@ config = do
       case isXhr env of
         -- TODO better way of communicating success without something as
         --      all-out as JSON?
-        True  -> return (ok (strHeaders "") (sendString ""))
+        True  -> return (ok nothingHeaders sendNothing)
         False -> return (seeOther "/")
       else renderNewPassword []
     else renderConfig vs
@@ -168,7 +168,7 @@ newPassword = do
         False -> return (seeOther "/")
       else do
         sid <- askSessions >>= liftIO . (writeNewSession True)
-        let cookie = cookieHeader (mkCookie (-1) ("sid", sid))
+        let cookie = cookieHeader (mkCookie Nothing ("sid", sid))
         return (withHeaders [cookie] (seeOther "/"))
     else renderNewPassword vs
 
@@ -186,7 +186,7 @@ login = do
   vs    <- validate form [("password", [vPassword crypt])]
   if null (invalids vs) then do
     case isXhr env of
-      True  -> return (ok (strHeaders "") (sendString ""))
+      True  -> return (ok nothingHeaders sendNothing)
       False -> do
         case lookup "sid" (parseCookies' env) of
           Just sid -> do
@@ -194,7 +194,7 @@ login = do
             return (seeOther "/")
           Nothing  -> do
             sid <- askSessions >>= liftIO . (writeNewSession True)
-            let cookie = cookieHeader (mkCookie (-1) ("sid", sid))
+            let cookie = cookieHeader (mkCookie Nothing ("sid", sid))
             return (withHeaders [cookie] (seeOther "/"))
     else case isXhr env of
       True  -> return unauthorized

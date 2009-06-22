@@ -21,7 +21,10 @@ method m h = do
   env <- askEnvironment
   if (requestMethod env) == m then h else mzero
 
-pathWith :: (ByteString -> ByteString -> Bool) -> String -> Handler -> Handler
+pathWith :: (ByteString -> ByteString -> Bool)
+         -> String
+         -> Handler
+         -> Handler
 pathWith pred p h = do
   env <- askEnvironment
   if pred p' (pathInfo env) then local f h else mzero
