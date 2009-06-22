@@ -34,7 +34,7 @@ solanin =
         -- after this point we must be set up
         path "/_l" loginHandlers,
         -- invalid sessions are removed
-        --authenticated' False (return seeLogin) removeSession,
+        authenticated' False (return seeLogin) removeSession,
         -- after this point we must be logged in
         path "/_l" logout,
         path "/_c" configHandlers,
