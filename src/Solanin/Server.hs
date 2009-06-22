@@ -98,7 +98,7 @@ config = do
       else renderNewPassword []
     else renderConfig vs
   where
-    -- if there is no FFmpeg binary available, or if the FFmpeg provAnyed
+    -- if there is no FFmpeg binary available, or if the FFmpeg provided
     -- cannot encode mp3s, we can only support passthrough mp3s
     supportedExts Nothing    = return [".mp3"]
     supportedExts (Just bin) = do
