@@ -1,0 +1,43 @@
+body {
+	font: 16px Lucida Grande, Segoe UI, sans-serif;
+	background-color: #222;
+}
+
+#login {
+	margin: 15% auto 0 auto;
+	text-align: center;
+}
+
+#login img {
+	margin: 1.5em;
+}
+
+#login form {
+	margin: 0;
+}
+
+#login input {
+	font: 16px Lucida Grande, Segoe UI, sans-serif;
+}
+
+.password {
+	padding: 6px;
+	background-color: #d9d9cf;
+	border: 1px solid transparent;
+	border-radius: 10px;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+}
+
+.submit {
+	display: none;
+}
+
+.error {
+	border-color: #df6161;
+	background-color: #df6161;
+}
+
+input[type=password]:focus {
+	outline: 0 none;
+}

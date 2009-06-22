@@ -1,0 +1,101 @@
+#config {
+	margin: 15% auto 0 auto;
+	text-align: center;
+}
+
+table.fields {
+	margin: 0 auto;
+}
+
+#config img {
+	margin: 1.5em;
+}
+
+#config form {
+	margin: 0;
+}
+
+.label {
+	vertical-align: middle;
+	color: white;
+	text-align: right;
+	padding-right: 1em;
+}
+
+.label-help {
+	position: relative;
+}
+
+.label-help > span {
+	position: absolute;
+	top: 0.3em;
+	color: #ccc;
+	right: 0;
+	font-size: 12px;
+}
+
+div.error {
+  position: relative;
+}
+
+div.error > span {
+  position: absolute;
+  top: 0.3em;
+  color: #df6161;
+  right: 0;
+  font-size: 12px;
+}
+
+input.error {
+  background-color: #ffff99;
+  border-color: #ffff99;
+}
+
+.input {
+	height: 3.5em;
+}
+
+.buttons {
+	padding-top: 1em;
+	text-align: center;
+}
+
+input.text {
+	font: 16px Lucida Grande, Segoe UI, sans-serif;
+	width: 20em;
+	border: 1px solid white;
+	padding: 3px;
+	border-radius: 3px;
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
+}
+
+input.button {
+	font: 14px Lucida Grande, Segoe UI, sans-serif;
+	font-weight: bold;
+	padding: 0.3em 1em 0.3em 1em;
+	min-width: 6em;
+	background-color: white;
+	border: 1px solid white;
+	border-bottom: 4px solid #ccc;
+	border-radius: 2px;
+	-moz-border-radius: 2px;
+	-webkit-border-radius: 2px;
+}
+
+input.button:active {
+	position: relative;
+	top: 2px;
+}
+
+input.button + input.button {
+	margin-left: 1em;
+}
+
+input.save:hover {
+	border-bottom: 4px solid green;
+}
+
+input.cancel:hover {
+	border-bottom: 4px solid red;
+}
