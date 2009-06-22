@@ -64,11 +64,11 @@ div.tabs {
 div.tabs a {
 	display: inline-block;
 	padding: 0.4em 1em;
-	color: white;
+	color: #ccc;
 }
 
 div.tabs a:hover {
-	color: #ccc;
+	color: white;
 }
 
 div.tabs a.selected {
