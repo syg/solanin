@@ -13,7 +13,6 @@ import Control.Monad.Reader
 import System.Directory
 import System.FilePath
 import System.Process
-import Network.URI (unEscapeString)
 import Network.Wai
 import qualified Hyena.Server as Hyena
 import qualified Solanin.Data as D
@@ -252,7 +251,6 @@ serve h state = Hyena.serve $ \env -> do
     Just h' -> return h'
     Nothing -> return notFound
   where
-    unescape = pack . unEscapeString . unpack
     unescapeEnv env = env
-      { pathInfo    = unescape (pathInfo env),
-        queryString = liftM unescape (queryString env) }
+      { pathInfo    = (pack . unescape . unpack) (pathInfo env),
+        queryString = liftM (pack . unescape . unpack) (queryString env) }

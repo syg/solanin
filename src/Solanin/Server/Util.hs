@@ -184,11 +184,12 @@ decodeForm env =
           else return $ Left (bs, [])
 
     pair bs = case C.split '=' bs of
-      [k, v] -> Right (unescape k, unescape v)
+      [k, v] -> Right (unescape (C.unpack k), unescape (C.unpack v))
       _      -> Left "malformed input"
 
-    unescape = unplus . unEscapeString . C.unpack
-
+unescape :: String -> String
+unescape = unplus . unEscapeString
+  where
     unplus []      = ""
     unplus ('+':s) = ' ' : unplus s
     unplus (  c:s) =   c : unplus s
