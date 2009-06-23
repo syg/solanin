@@ -13,6 +13,7 @@ Data-Files:
   static/img/*.png
   static/js/*.js
   static/swf/*.swf
+  templates/*.st
 
 Executable solanin
   Build-Depends:
