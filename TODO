@@ -1,8 +1,6 @@
 UI
 ==
- - dim colors on bottom bar
 
 Backend
 =======
- - rewrite using Hyena and STM
  - how the hell do I get Unicode working on Windows?
