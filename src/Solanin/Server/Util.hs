@@ -187,7 +187,11 @@ decodeForm env =
       [k, v] -> Right (unescape k, unescape v)
       _      -> Left "malformed input"
 
-    unescape = unEscapeString . C.unpack
+    unescape = unplus . unEscapeString . C.unpack
+
+    unplus []      = ""
+    unplus ('+':s) = ' ' : unplus s
+    unplus (  c:s) =   c : unplus s
 
 isXhr :: Environment -> Bool
 isXhr env =

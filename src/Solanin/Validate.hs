@@ -102,7 +102,7 @@ vLibrary Nothing = return (Invalid "malformed input")
 
 vFFmpeg :: Validator (Maybe String)
 vFFmpeg a@(Just bin) = liftIO $ do
-  if (null bin) then return (Valid a)
+  if null bin then return (Valid a)
     else do
       (ec, out, err) <- readProcessWithExitCode bin ["-version"] ""
       case ec of
