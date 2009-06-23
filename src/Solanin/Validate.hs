@@ -3,6 +3,7 @@
 module Solanin.Validate (Validation(Valid, Invalid),
                          Validator,
 
+                         fromValid,
                          valids,
                          invalids,
                          validate,
@@ -28,10 +29,12 @@ data Validation a = Valid a | Invalid String | VacuouslyValid
   deriving (Show, Eq)
 
 instance Monad Validation where
-  return a        = Valid a
-  fail x          = Invalid x
-  Valid a >>= f   = f a
-  Invalid x >>= _ = Invalid x
+  return a = Valid a
+  fail x   = Invalid x
+
+  Valid a >>= f        = f a
+  Invalid x >>= _      = Invalid x
+  VacuouslyValid >>= _ = error "cannot >>= VacuouslyValid"
 
 instance MonadPlus Validation where
   mzero = VacuouslyValid
@@ -40,9 +43,9 @@ instance MonadPlus Validation where
   --  * if there are any Invalids, first Invalid
   --  * if everything is Valid, the last Valid
   --  * if empty, VacuouslyValid
-  Invalid x `mplus` ys             = Invalid x
+  Invalid x `mplus` _              = Invalid x
   Valid x   `mplus` VacuouslyValid = Valid x
-  xs        `mplus` ys             = ys
+  _         `mplus` ys             = ys
 
 type Validator a = (MonadIO m) => a -> m (Validation a)
 
@@ -104,7 +107,7 @@ vFFmpeg :: Validator (Maybe String)
 vFFmpeg a@(Just bin) = liftIO $ do
   if null bin then return (Valid a)
     else do
-      (ec, out, err) <- readProcessWithExitCode bin ["-version"] ""
+      (ec, out, _) <- readProcessWithExitCode bin ["-version"] ""
       case ec of
         ExitSuccess -> do
           if isFFmpeg (lines out) then return (Valid a)
@@ -112,9 +115,9 @@ vFFmpeg a@(Just bin) = liftIO $ do
         ExitFailure _ -> return (Invalid "error executing binary")
   where
     isFFmpeg [] = False
-    isFFmpeg (l:ls) = case words l of
-      []   -> False
-      w:ws -> w == "FFmpeg"
+    isFFmpeg (l:_) = case words l of
+      []  -> False
+      w:_ -> w == "FFmpeg"
 vFFmpeg Nothing = return (Valid Nothing)
 
 vPassword :: String -> Validator (Maybe String)

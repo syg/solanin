@@ -2,12 +2,11 @@
 
 module Solanin.Server.Util where
 
-import Data.ByteString (ByteString)
+import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as C
 import Data.Either
 import Data.Maybe (catMaybes)
 import Data.List (intercalate, lookup)
-import Text.JSON (JSON, encode)
 import Text.ParserCombinators.Parsec
 import Network.URI (unEscapeString)
 import Network.Wai
@@ -118,14 +117,11 @@ cookieHeader c = (C.pack "Set-Cookie", C.pack $ intercalate "; " props)
 parseCookies :: Environment -> [Cookie]
 parseCookies env =
   case lookup (C.pack "Cookie") (headers env) of
-    Just v  -> either eh catMaybes (parseCookies v)
+    Just v  -> either eh catMaybes (parse cookies "" (C.unpack v))
       where
         eh e = error ("Server.Util.parseCookies: " ++ show e)
     Nothing -> []
   where
-
-    parseCookies = (parse cookies "") . C.unpack
-
     cookies = do
       ver <- option "0" (do { v <- reserved "$Version"; semi; return v })
       sepBy1 (cookie ver) (comma <|> semi)
@@ -157,7 +153,7 @@ parseCookies' env = map f (parseCookies env)
 decodeForm :: Environment -> IO [(String, String)]
 decodeForm env =
   case lookup (C.pack "Content-Type") (headers env) of
-    Just t | urlencoded `C.isPrefixOf` t -> decode env
+    Just t | urlencoded `C.isPrefixOf` t -> decode
            | otherwise -> e ("unsupported Content-Type: " ++
                               C.unpack t ++ "\n")
     Nothing -> error ("no Content-Type\n")
@@ -165,7 +161,7 @@ decodeForm env =
     e msg = error ("Server.Util.decodeForm: " ++ msg)
     urlencoded = C.pack "application/x-www-form-urlencoded"
 
-    decode env = do
+    decode = do
       parsed <- input env pairs (C.empty, [])
       case parsed of
         (bs, ps) | C.length bs == 0 -> return ps

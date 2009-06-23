@@ -1,0 +1,47 @@
+Name:          solanin
+Version:       0.1
+Cabal-Version: >= 1.6
+License:       PublicDomain
+License-File:  LICENSE
+Author:        Shu-yu Guo <shu@rfrn.org>
+Homepage:      http://github.com/syg/solanin
+Synopsis:      Web music streamer
+Category:      Web
+Build-Type:    Simple
+Data-Files:
+  static/css/*.css
+  static/img/*.png
+  static/js/*.js
+  static/swf/*.swf
+
+Executable solanin
+  Build-Depends:
+    base                 == 4.*,
+    stm,
+    containers,
+    directory,
+    process,
+    filepath,
+    random,
+    mtl                  >= 1 && < 1.2,
+    parsec               >= 2.1.0.0 && < 3.0.0,
+    old-time,
+    old-locale,
+    bytestring,
+    network,
+    utf8-string,
+    hyena                == 0.1,
+    MaybeT,
+    taglib               == 0.1.1,
+    SHA,
+    HStringTemplate,
+    json
+
+  if !os(windows)
+    Build-Depends:
+      unix
+
+  Main-Is:               Main.hs
+  Hs-Source-Dirs:        src
+  GHC-Options:
+    -threaded -Wall -O2 -fno-warn-orphans -fno-warn-missing-signatures

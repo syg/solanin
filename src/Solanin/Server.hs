@@ -2,17 +2,15 @@ module Solanin.Server (solanin,
                        serve) where
 
 import Data.Char
-import Data.Monoid
 import Data.List (sortBy, (\\))
 import Data.Maybe
 import Data.ByteString.Char8 (pack, unpack)
 import qualified Data.Map as M
-import Control.Concurrent.STM
 import Control.Monad.Maybe
 import Control.Monad.Reader
 import System.Directory
 import System.FilePath
-import System.Process
+import System.Process hiding (env)
 import Network.Wai
 import qualified Hyena.Server as Hyena
 import qualified Solanin.Data as D
@@ -50,7 +48,7 @@ solanin =
     loginHandlers  = msum [method Get (renderLogin False),
                            method Post login]
     configHandlers = msum [method Get (renderConfig []),
-                           method Post config]
+                           method Post configure]
     passwdHandlers = msum [method Get (renderNewPassword []),
                            method Post newPassword]
 
@@ -62,8 +60,8 @@ renderConfig validations = do
            [("config",      STB config),
             ("validations", STB (M.fromList validations))]
 
-config :: Handler
-config = do
+configure :: Handler
+configure = do
   env  <- askEnvironment
   form <- liftIO (decodeForm env)
   vs   <- validate form [("library", [vNotBlank, vLibrary]),
@@ -106,14 +104,14 @@ config = do
                      else return [".mp3"]
         Nothing -> return [".mp3"]
 
-    decodables es fs = filter (canDecode fs) es
+    decodables es fs = filter canDecode es
       where
-        canDecode fs ext = case M.lookup (drop 1 ext) fs of
+        canDecode ext = case M.lookup (drop 1 ext) fs of
           Just cs -> 'D' `elem` cs
           Nothing -> False
 
     ffmpegFormats bin = do
-      (ec, out, _) <- readProcessWithExitCode bin ["-formats"] ""
+      (_, out, _) <- readProcessWithExitCode bin ["-formats"] ""
       return $ M.fromList (formats (dropWhile (== "File formats:")
                                    (takeWhile (/= "") (lines $ fixCR out))))
       where
@@ -224,11 +222,13 @@ renderPlaylist t pl = do
               ("songs", sortBy cmp (D.songs pl'))]
   where
     relTo lib (D.Directory f) = D.Directory (makeRelative lib f)
-    relTo lib s@(D.Song f _ _ _ _ _) = s { D.path = makeRelative lib f }
+    relTo lib s@(D.Song f _ _ _ _ _) = s { D.songPath = makeRelative lib f }
 
     -- songs are sorted by album then track number
-    cmp a b | D.album a == D.album b = D.track a `compare` D.track b
-            | otherwise              = D.album a `compare` D.album b
+    album = D.songAlbum
+    track = D.songTrack
+    cmp a b | album a == album b = track a `compare` track b
+            | otherwise          = album a `compare` album b
 
 renderPlayer :: Handler
 renderPlayer = do

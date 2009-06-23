@@ -5,7 +5,6 @@ module Solanin.Server.Handler where
 import Prelude hiding (drop, length)
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 (pack, drop, length, isPrefixOf)
-import Control.Concurrent.STM
 import Control.Monad.Maybe
 import Control.Monad.Reader
 import Network.Wai
@@ -25,9 +24,9 @@ pathWith :: (ByteString -> ByteString -> Bool)
          -> String
          -> Handler
          -> Handler
-pathWith pred p h = do
+pathWith c p h = do
   env <- askEnvironment
-  if pred p' (pathInfo env) then local f h else mzero
+  if c p' (pathInfo env) then local f h else mzero
   where
     p' = pack p
     f (env, st) = (env { pathInfo = drop (length p') (pathInfo env) }, st)

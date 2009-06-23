@@ -8,13 +8,11 @@ import qualified Data.ByteString as S
 import Data.ByteString.Char8 (pack, unpack)
 import qualified Data.Map as M
 import Data.Maybe (isJust, fromJust)
-import Control.Exception (evaluate)
-import Control.Concurrent (forkIO)
 import Control.Monad (liftM)
 import Control.Monad.Trans (liftIO)
 import System.FilePath
 import System.Directory
-import System.Process
+import System.Process hiding (env)
 import System.IO
 import System.Locale (defaultTimeLocale)
 import System.Time
@@ -47,9 +45,9 @@ fileProcessor :: Processor
 fileProcessor fp = do
   h  <- openBinaryFile fp ReadMode
   sz <- hFileSize h
-  let headers = [("Content-Type", mimetypeOf fp),
-                 ("Content-Length", show sz)]
-  return (ok (packHeaders headers)
+  let hdrs = [("Content-Type", mimetypeOf fp),
+              ("Content-Length", show sz)]
+  return (ok (packHeaders hdrs)
              (sendHandle S.hGetNonBlocking hClose h))
 
 transcodeServer :: Handler
@@ -67,9 +65,9 @@ transcodeProcessor config fp =
   if (takeExtension fp) `elem` (configExts config) then do
     (_, Just outh, Just errh, ph) <- createProcess ffmpeg
     hClose errh
-    let headers = [("Content-Type", mimetypeOf ".mp3"),
-                   ("Connection", "close")]
-    return (ok (packHeaders headers)
+    let hdrs = [("Content-Type", mimetypeOf ".mp3"),
+                ("Connection", "close")]
+    return (ok (packHeaders hdrs)
                (sendHandle S.hGet (close ph) outh))
     else return (serverError "cannot transcode")
   where
@@ -93,13 +91,13 @@ serve root env p = do
     lmtime <- getModificationTime fp
     let mtime = formatCalendarTime defaultTimeLocale
                 "%a, %d %b %Y %X GMT" (toUTCTime lmtime)
-    if notModifiedSince mtime env then return notModified
+    if notModifiedSince mtime then return notModified
       else let
-        headers = packHeaders [("Last-Modified", mtime)]
-        in liftM (withHeaders headers) (p fp)
+        hdrs = packHeaders [("Last-Modified", mtime)]
+        in liftM (withHeaders hdrs) (p fp)
     else return notFound
   where
-    notModifiedSince mtime env =
+    notModifiedSince mtime =
       lookup (pack "If-Modified-Since") (headers env) == Just (pack mtime)
 
 mimetypes = M.fromList

@@ -2,11 +2,9 @@ module Solanin.State where
 
 import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.Map as M
-import Data.Word
 import Data.Digest.Pure.SHA
 import Text.JSON
-import Control.Monad (liftM, replicateM, unless)
-import Control.Concurrent
+import Control.Monad (liftM, replicateM)
 import Control.Concurrent.STM
 import System.IO
 import System.Random
@@ -26,19 +24,19 @@ data Config = Config
 
 instance JSON Config where
   readJSON (JSObject obj) = do
-    setup    <- lookup' "setup" configSetup
-    library  <- lookup' "library" configLibrary
-    ignored  <- lookup' "ignored" configIgnored
-    ffmpeg   <- lookup' "ffmpeg" configFFmpeg
-    exts     <- lookup' "exts" configExts
-    bitrate  <- lookup' "bitrate" configBitrate
-    password <- lookup' "password" configPassword
+    setup    <- lookup' "setup"
+    library  <- lookup' "library"
+    ignored  <- lookup' "ignored"
+    ffmpeg   <- lookup' "ffmpeg"
+    exts     <- lookup' "exts"
+    bitrate  <- lookup' "bitrate"
+    password <- lookup' "password"
     return $ Config setup library ignored ffmpeg exts bitrate password
     where
       assocs = fromJSObject obj
-      lookup' k f = maybe (Error "malformed config")
-                          readJSON
-                          (lookup k assocs)
+      lookup' k = maybe (Error "malformed config")
+                        readJSON
+                        (lookup k assocs)
   readJSON _ = Error "malformed config"
 
   showJSON c = makeObj assocs
@@ -51,6 +49,7 @@ instance JSON Config where
                 ("bitrate",  showJSON $ configBitrate c),
                 ("password", showJSON $ configPassword c)]
 
+nullConfig :: Config
 nullConfig = Config
   { configSetup    = False
   , configLibrary  = ""
@@ -61,6 +60,7 @@ nullConfig = Config
   , configPassword = ""
   }
 
+configFile :: FilePath
 configFile = "solanin.conf"
 
 newSessions :: IO (TVar Sessions)

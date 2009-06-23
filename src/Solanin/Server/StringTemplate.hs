@@ -15,7 +15,7 @@ import Text.StringTemplate.Classes (ToSElem(..), SElem(..))
 import System.FilePath
 import Network.Wai
 import qualified Network.URI as URI
-import Solanin.Data as D
+import qualified Solanin.Data as D
 import Solanin.Server.Util
 import Solanin.State
 import Solanin.Validate
@@ -65,6 +65,7 @@ instance ToSElem D.PlaylistEntry where
 instance (ToSElem a) => ToSElem (Validation a) where
   toSElem (Valid a)   = SM $ M.fromList [("valid", toSElem a)]
   toSElem (Invalid x) = SM $ M.fromList [("invalid", STR x)]
+  toSElem _           = SNull
 
 renderST' :: (ToSElem a, MonadIO m)
           => FilePath
@@ -75,10 +76,10 @@ renderST' root name attrs = do
   g <- liftIO $ directoryGroupLazy root
   case getStringTemplate name g of
     Just t  -> let
-      s = render $ setManyAttrib attrs t
-      headers = [("Content-Type", "text/html; charset=utf-8"),
-                 ("Content-Length", show (length s))]
-      in return (ok (packHeaders headers) (sendBytes s))
+      s  = render $ setManyAttrib attrs t
+      hs = [("Content-Type", "text/html; charset=utf-8"),
+            ("Content-Length", show (length s))]
+      in return (ok (packHeaders hs) (sendBytes s))
     Nothing -> return notFound
 
 renderST :: (ToSElem a, MonadIO m)
