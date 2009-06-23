@@ -157,13 +157,20 @@ parseCookies' env = map f (parseCookies env)
 decodeForm :: Environment -> IO [(String, String)]
 decodeForm env =
   case lookup (C.pack "Content-Type") (headers env) of
-    Just t | t == (C.pack "application/x-www-form-urlencoded") -> do
+    Just t | urlencoded `C.isPrefixOf` t -> decode env
+           | otherwise -> e ("unsupported Content-Type: " ++
+                              C.unpack t ++ "\n")
+    Nothing -> error ("no Content-Type\n")
+  where
+    e msg = error ("Server.Util.decodeForm: " ++ msg)
+    urlencoded = C.pack "application/x-www-form-urlencoded"
+
+    decode env = do
       parsed <- input env pairs (C.empty, [])
       case parsed of
         (bs, ps) | C.length bs == 0 -> return ps
                  | otherwise        -> error "malformed input\n"
-    _ -> error "Server.Util.decodeForm: input Content-Type unsupported\n"
-  where
+
     pairs (partial, seed) bs = let
       sp  = C.split '&' (C.append partial bs)
       ps  = map pair sp

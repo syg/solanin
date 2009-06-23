@@ -1,6 +1,5 @@
 module Main where
 
-import System.IO.Error (isUserError)
 import Solanin.Server
 import Solanin.State
 
