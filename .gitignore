@@ -1,0 +1,4 @@
+solanin.conf
+*.hi
+*.o
+/dist/*
