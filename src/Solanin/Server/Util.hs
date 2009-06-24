@@ -184,7 +184,7 @@ decodeForm env =
       _      -> Left "malformed input"
 
 unescape :: String -> String
-unescape = unplus . unEscapeString
+unescape = unEscapeString . unplus
   where
     unplus []      = ""
     unplus ('+':s) = ' ' : unplus s
