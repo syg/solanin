@@ -1,0 +1,110 @@
+<html>
+<head>
+ <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+ <title>Solanin - A Haskell web music streamer</title>
+ <style type="text/css">
+  body {
+    font: 14px Lucida Grande, Segoe UI, sans-serif;
+    color: #ccc;
+    background-color: #222;
+    width: 800px;
+    margin: 1em auto;
+  }
+
+  a {
+    color: #bdbdf6;
+    text-decoration: none;
+  }
+
+  a:hover {
+    border-bottom: 1px dotted #bdbdf6;
+  }
+
+  div.logo {
+    text-align: center;
+  }
+
+  ul.depends li {
+    font-family: Monaco, Consolas, monospace;
+  }
+
+  code {
+    font-family: Monaco, Consolas, monospace;
+  }
+
+  ul.depends, pre {
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    background-color: #ccc;
+    color: black;
+    border: 1px solid #ccc;
+    padding: 0.5em 1em;
+  }
+
+  ul.depends {
+    list-style: none;
+  }
+
+  ul.depends li:before {
+    content: "cabal install ";
+  }
+
+  h2 {
+    border-bottom: 3px solid gray;
+    padding-bottom: 0.3em;
+    margin-left: 1em;
+    width: 80%;
+  }
+
+  #footer {
+    text-align: right;
+    font-size: 12px;
+    font-style: italic;
+    margin-top: 2em;
+    padding-top: 1em;
+    margin-left: auto;
+  }
+ </style>
+</head>
+
+<body>
+ <div class="logo">
+  <img src="logo.png" alt="Solanin"/>
+ </div>
+ <p>Solanin is a Haskell web music streamer that uses <a href="http://ffmpeg.org">FFmpeg</a> to transcode non-streamable formats to mp3 on the fly.</p>
+ <p>It is in the Public Domain and can be used without any restrictions.</p>
+
+ <h2>Install</h2>
+
+ <p>Since Solanin is still under early development, the best way to install and try it out is to clone the git repo.</p>
+ <p>Most of what Solanin depends on is cabalized and on <a href="http://hackage.haskell.org">hackage</a>. Here's a list of packages you need to install:</p>
+ <ul class="depends">
+  <li>taglib</li>
+  <li>utf8-string</li>
+  <li>network-bytestring</li>
+  <li>json</li>
+  <li>MaybeT</li>
+  <li>SHA</li>
+  <li>HStringTemplate</li>
+ </ul>
+ <p>Solanin uses <a href="http://github.com/tibbe/hyena">Hyena</a>, a simple web application container that uses left-fold enumerators. It is also under early development, and the git repo has many fixes that are not yet in the cabal package on hackage. You should clone the repo and install it manually:</p>
+ <pre><code>git clone http://github.com/tibbe/hyena
+cabal install</code></pre>
+ <p>After all the dependencies are installed, just clone Solanin as normal and install:</p>
+ <pre><code>git clone http://github.com/syg/solanin
+cabal install</code></pre>
+
+ <h2>Running</h2>
+
+ <p>Once Solanin is installed, run:</p>
+ <pre><code>solanin</code></pre>
+ <p>It's not a daemon (the daemonized mode for Hyena doesn't work yet), so you should run that in a teminal you're not using or in the background.</p>
+ <p>Then point your browser to <a href="http://localhost:3000">localhost:3000</a> and you should be greeted with a configuration screen. It should be pretty simple from there.</p>
+
+ <h2>Reporting Bugs and Contributing</h2>
+ <p>If you found or fixed a bug, just send <a href="http://github.com/syg">me</a> a message. Or better yet, fork the <a href="http://github.com/syg/solanin">repo</a> and send me pull requests.</p>
+
+<p id="footer">Shu-yu Guo, 2009</p>
+</body>
+</html>
