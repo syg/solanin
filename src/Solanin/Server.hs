@@ -20,10 +20,13 @@ import Solanin.Server.StringTemplate
 import Solanin.Server.Util
 import Solanin.State
 import Solanin.Validate
+import Paths_solanin
 
 solanin :: Handler
-solanin =
-  msum [prefix "/_s" (method Get (fileServer "static")),
+solanin = do
+  staticDir <- liftIO (getDataFileName "static")
+
+  msum [prefix "/_s" (method Get (fileServer staticDir)),
         setup False (msum [path "/_c" configHandlers,
                            path "/_p" (method Post newPassword)]),
 

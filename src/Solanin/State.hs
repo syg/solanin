@@ -8,6 +8,8 @@ import Control.Monad (liftM, replicateM)
 import Control.Concurrent.STM
 import System.IO
 import System.Random
+import System.Directory
+import System.FilePath ((</>), takeDirectory)
 
 type State    = (TVar Config, TVar Sessions)
 type Sessions = M.Map String Bool
@@ -60,8 +62,8 @@ nullConfig = Config
   , configPassword = ""
   }
 
-configFile :: FilePath
-configFile = "solanin.conf"
+configFile :: IO FilePath
+configFile = getHomeDirectory >>= return . (</> ".solanin/config")
 
 newSessions :: IO (TVar Sessions)
 newSessions = atomically $ newTVar M.empty
@@ -98,13 +100,17 @@ updateConfig f x = atomically $ readTVar x >>= (writeTVar x) . f
 
 loadConfig :: IO (TVar Config)
 loadConfig = do
-  result <- liftM decode (readFile configFile)
+  fp     <- configFile
+  result <- liftM decode (readFile fp)
   case result of
     Ok c    -> atomically $ newTVar c
     Error _ -> fail "malformed config"
 
 saveConfig :: TVar Config -> IO ()
-saveConfig c = readConfig c >>= writeFile configFile . encode
+saveConfig c = do
+  fp <- configFile
+  createDirectoryIfMissing True (takeDirectory fp)
+  readConfig c >>= writeFile fp . encode
 
 sha1Crypt :: String -> String -> String
 sha1Crypt salt plain = salt' ++ (show $ (sha1 . L.pack) (salt' ++ plain))

@@ -19,6 +19,7 @@ import qualified Solanin.Data as D
 import Solanin.Server.Util
 import Solanin.State
 import Solanin.Validate
+import Paths_solanin
 
 data STBox = forall a. ToSElem a => STB a
 
@@ -86,7 +87,9 @@ renderST :: (ToSElem a, MonadIO m)
          => String
          -> [(String, a)]
          -> m (Int, ByteString, Headers, Enumerator)
-renderST = renderST' "templates"
+renderST name attrs = do
+  d <- liftIO (getDataFileName "templates")
+  renderST' d name attrs
 
 escapeFileURL :: FilePath -> FilePath
 escapeFileURL f = intercalate "/" $
