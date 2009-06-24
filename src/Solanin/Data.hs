@@ -30,32 +30,29 @@ exts = [".mp3", ".flac", ".ape", ".tta", ".wav"]
 --   * There is an error with opening the file.
 --   * The file does not have one of the recognized extensions.
 open :: [String] -> FilePath -> IO (Maybe PlaylistEntry)
-open xts f = catch (open' xts f) (const (return Nothing))
-
-open' :: [String] -> FilePath -> IO (Maybe PlaylistEntry)
-open' xts f = do
-  -- TagLib.open doesn't throw exceptions, so we have to check ourselves if we
-  -- can read the file
-  perms <- getPermissions f
-  if readable perms then open'' xts f else return Nothing
-
-open'' :: [String] -> FilePath -> IO (Maybe PlaylistEntry)
-open'' xts f = do
-  fe <- doesDirectoryExist f
-  case fe of
-    True  -> return $ Just (Directory f)
-    False -> if takeExtension f `elem` xts then do
-      tf <- TagLib.open (UTF8.decodeString f)
-      duration <- tagDuration tf
-      let r = return $ Just (Song f 0 (takeBaseName f) "" "" duration)
-      maybe r (g r duration) tf
-      else return Nothing
+open xts f = catch p (const (return Nothing))
   where
+    p = do
+      -- TagLib.open doesn't throw exceptions, so we have to check
+      -- ourselves if we can read the file
+      perms <- getPermissions f
+      if readable perms then do
+        fe <- doesDirectoryExist f
+        case fe of
+          True  -> return $ Just (Directory f)
+          False -> if takeExtension f `elem` xts then do
+            tf <- TagLib.open (UTF8.decodeString f)
+            duration <- tagDuration tf
+            let r = return $ Just (Song f 0 (takeBaseName f) "" "" duration)
+            maybe r (g r duration) tf
+            else return Nothing
+        else return Nothing
+
     tagDuration (Just tf) = do
-      p <- TagLib.audioProperties tf
-      case p of
-        Just p' -> TagLib.duration p'
-        Nothing -> return 0
+      ap <- TagLib.audioProperties tf
+      case ap of
+        Just ap' -> TagLib.duration ap'
+        Nothing  -> return 0
     tagDuration Nothing = return 0
 
     g r duration tf = do
