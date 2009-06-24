@@ -2,9 +2,7 @@
 
 module Solanin.Server.Handler where
 
-import Prelude hiding (drop, length)
-import Data.ByteString (ByteString)
-import Data.ByteString.Char8 (pack, drop, length, isPrefixOf)
+import qualified Data.ByteString.Char8 as C
 import Control.Monad.Maybe
 import Control.Monad.Reader
 import Network.Wai
@@ -13,14 +11,14 @@ import Solanin.State
 
 type Handler = ReaderT (Environment, State)
                        (MaybeT IO)
-                       (Int, ByteString, Headers, Enumerator)
+                       (Int, C.ByteString, Headers, Enumerator)
 
 method :: Method -> Handler -> Handler
 method m h = do
   env <- askEnvironment
   if (requestMethod env) == m then h else mzero
 
-pathWith :: (ByteString -> ByteString -> Bool)
+pathWith :: (C.ByteString -> C.ByteString -> Bool)
          -> String
          -> Handler
          -> Handler
@@ -28,11 +26,13 @@ pathWith c p h = do
   env <- askEnvironment
   if c p' (pathInfo env) then local f h else mzero
   where
-    p' = pack p
-    f (env, st) = (env { pathInfo = drop (length p') (pathInfo env) }, st)
+    p' = C.pack p
+    f (env, st) = (env { pathInfo = pathInfo' }, st)
+      where
+        pathInfo' = C.drop (C.length p') (pathInfo env)
 
 prefix :: String -> Handler -> Handler
-prefix = pathWith isPrefixOf
+prefix = pathWith C.isPrefixOf
 
 path :: String -> Handler -> Handler
 path = pathWith (==)

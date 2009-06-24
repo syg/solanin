@@ -5,8 +5,7 @@ module Solanin.Server.StringTemplate (STBox(..),
                                       renderST,
                                       renderST') where
 
-import Prelude hiding (length)
-import Data.ByteString (ByteString, length)
+import qualified Data.ByteString as S (ByteString, length)
 import Data.List (intercalate)
 import qualified Data.Map as M
 import Control.Monad.Trans (MonadIO(..))
@@ -72,21 +71,21 @@ renderST' :: (ToSElem a, MonadIO m)
           => FilePath
           -> String
           -> [(String, a)]
-          -> m (Int, ByteString, Headers, Enumerator)
+          -> m (Int, S.ByteString, Headers, Enumerator)
 renderST' root name attrs = do
   g <- liftIO $ directoryGroupLazy root
   case getStringTemplate name g of
     Just t  -> let
       s  = render $ setManyAttrib attrs t
       hs = [("Content-Type", "text/html; charset=utf-8"),
-            ("Content-Length", show (length s))]
+            ("Content-Length", show (S.length s))]
       in return (ok (packHeaders hs) (sendBytes s))
     Nothing -> return notFound
 
 renderST :: (ToSElem a, MonadIO m)
          => String
          -> [(String, a)]
-         -> m (Int, ByteString, Headers, Enumerator)
+         -> m (Int, S.ByteString, Headers, Enumerator)
 renderST name attrs = do
   d <- liftIO (getDataFileName "templates")
   renderST' d name attrs
