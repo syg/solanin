@@ -38,10 +38,6 @@ Executable solanin
     HStringTemplate,
     json
 
-  if !os(windows)
-    Build-Depends:
-      unix
-
   Main-Is:               Main.hs
   Hs-Source-Dirs:        src
   GHC-Options:

@@ -44,9 +44,9 @@ solanin = do
   where
     seeSetup = seeOther "/_c"
     seeLogin = seeOther "/_l"
-    removeSession = do
-      let cookie = cookieHeader (mkCookie (Just 0) ("sid", ""))
-      return (withHeaders [cookie] seeLogin)
+    removeSession = let
+      cookie = cookieHeader (mkCookie (Just 0) ("sid", ""))
+      in return (withHeaders [cookie] seeLogin)
 
     loginHandlers  = msum [method Get (renderLogin False),
                            method Post login]

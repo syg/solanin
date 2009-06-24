@@ -331,7 +331,7 @@ function Solanin() {
 	this.stopScroll = function(e) {
 		sl.scrollStopped = true;
 		e.stop();
-		e.unbind(); // unbind the hover callback
+		e.unbind(); /* unbind the hover callback */
 		e.css("margin-left", "0px");
 	}
 
@@ -530,7 +530,6 @@ function Solanin() {
 				ss.play();
 			} else {
 				ss = sm.createSound({
-					/* single quotes in the id break SoundManager */
 					id: id,
 					url: url,
 					onload: sl.events.load,
