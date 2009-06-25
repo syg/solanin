@@ -102,6 +102,12 @@ cabal install</code></pre>
  <p>It's not a daemon (the daemonized mode for Hyena doesn't work yet), so you should run that in a teminal you're not using or in the background.</p>
  <p>Then point your browser to <a href="http://localhost:3000">localhost:3000</a> and you should be greeted with a configuration screen. It should be pretty simple from there.</p>
 
+ <h2>Bugs</h2>
+
+ <p>Currently Solanin makes the assumption that your filenames are in <code>utf-8</code> (so if you're on some sort of Unix, better set your locale to <code>utf-8</code>), and that the tags of your songs are also in <code>utf-8</code>.
+ <p>These assumptions have drawkbacks. Unicode filename support in GHC right
+ now is broken on Windows (everything is ACP encoded); I submitted a bug report and this problem should be fixed on 6.12. It's also inflexible if you have tags encoded in different encodings. I might let the user choose the default character set in the future.</p>
+
  <h2>Reporting Bugs and Contributing</h2>
  <p>If you found or fixed a bug, just send <a href="http://github.com/syg">me</a> a message. Or better yet, fork the <a href="http://github.com/syg/solanin">repo</a> and send me pull requests.</p>
 
