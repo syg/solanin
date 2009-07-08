@@ -1,5 +1,5 @@
 Name:          solanin
-Version:       0.1
+Version:       0.2
 Cabal-Version: >= 1.6
 License:       PublicDomain
 License-File:  LICENSE
@@ -28,7 +28,10 @@ Executable solanin
     parsec               >= 2.1.0.0 && < 3.0.0,
     old-time,
     old-locale,
+    binary,
+    zlib,
     bytestring,
+    bytestring-trie,
     network,
     utf8-string,
     hyena                == 0.1,

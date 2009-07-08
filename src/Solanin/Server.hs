@@ -2,7 +2,6 @@ module Solanin.Server (solanin,
                        serve) where
 
 import Data.Char
-import Data.List (sortBy, (\\))
 import Data.Maybe
 import Data.ByteString.Char8 (pack, unpack)
 import qualified Data.Map as M
@@ -13,11 +12,13 @@ import System.FilePath
 import System.Process hiding (env)
 import Network.Wai
 import qualified Hyena.Server as Hyena
-import qualified Solanin.Data as D
 import Solanin.Server.Handler
 import Solanin.Server.File
 import Solanin.Server.StringTemplate
 import Solanin.Server.Util
+import Solanin.Song
+import Solanin.Playlist (PlaylistEntry(..))
+import qualified Solanin.Playlist as PL
 import Solanin.State
 import Solanin.Validate
 import Paths_solanin
@@ -80,7 +81,7 @@ configure = do
     config <- askConfig
     liftIO $ do
       exts <- supportedExts ffmpeg
-      updateConfig (\c -> c { configLibrary = library,
+      adjustConfig (\c -> c { configLibrary = library,
                               configIgnored = maybe [] commas ignored,
                               configFFmpeg  = ffmpeg,
                               configExts    = exts,
@@ -103,7 +104,7 @@ configure = do
       formats <- ffmpegFormats bin
       case M.lookup "mp3" formats of
         Just cs -> if 'E' `elem` cs then
-                     return (decodables D.exts formats)
+                     return (decodables songExts formats)
                      else return [".mp3"]
         Nothing -> return [".mp3"]
 
@@ -159,7 +160,7 @@ newPassword = do
     liftIO $ do
       let new' = maybe "" id new
       salt <- mkSalt 8
-      updateConfig (\c -> c { configSetup = True,
+      adjustConfig (\c -> c { configSetup = True,
                               configPassword = sha1Crypt salt new' }) config
       saveConfig config
     if configSetup config' then
@@ -167,10 +168,20 @@ newPassword = do
         True  -> return (ok (strHeaders "") (sendString ""))
         False -> return (seeOther "/")
       else do
-        sid <- askSessions >>= liftIO . (writeNewSession True)
+        sd  <- newSessionData True
+        sid <- askSessions >>= liftIO . (writeNewSession sd)
         let cookie = cookieHeader (mkCookie Nothing ("sid", sid))
         return (withHeaders [cookie] (seeOther "/"))
     else renderNewPassword vs
+
+newSessionData :: Bool -> HandlerT SessionData
+newSessionData b = do
+  lib   <- liftM configLibrary (askConfig >>= liftIO . readConfig)
+  songs <- askIndex >>= liftIO . (queryIndex "")
+  return $ SessionData
+    { sessionLoggedIn = b
+    , sessionPlaylist = PL.fromSet lib songs
+    }
 
 renderLogin :: Bool -> Handler
 renderLogin True  = do
@@ -190,10 +201,12 @@ login = do
       False -> do
         case lookup "sid" (parseCookies' env) of
           Just sid -> do
-            askSessions >>= liftIO . (writeSession sid True)
+            let f s = s { sessionLoggedIn = True }
+            askSessions >>= liftIO . (adjustSession sid f)
             return (seeOther "/")
           Nothing  -> do
-            sid <- askSessions >>= liftIO . (writeNewSession True)
+            sd  <- newSessionData True
+            sid <- askSessions >>= liftIO . (writeNewSession sd)
             let cookie = cookieHeader (mkCookie Nothing ("sid", sid))
             return (withHeaders [cookie] (seeOther "/"))
     else case isXhr env of
@@ -205,45 +218,36 @@ logout = do
   cookies <- liftM parseCookies' askEnvironment
   case lookup "sid" cookies of
     Just sid -> do
-      askSessions >>= liftIO . (writeSession sid False)
+      let f s = s { sessionLoggedIn = False }
+      askSessions >>= liftIO . (adjustSession sid f)
       return (seeOther "/")
     Nothing  -> return (seeOther "/")
 
-playlist :: FilePath -> [FilePath] -> [String] -> IO [D.PlaylistEntry]
-playlist d ignored exts = do
-  fs <- getDirectoryContents d
-  pl <- mapM open (map (d </>) (fs \\ (ignored ++ [".", ".."])))
-  return $ catMaybes pl
-  where
-    open = D.open exts
-
-renderPlaylist :: String -> [D.PlaylistEntry] -> Handler
+renderPlaylist :: String -> [PlaylistEntry] -> Handler
 renderPlaylist t pl = do
   lib <- liftM configLibrary (askConfig >>= liftIO . readConfig)
   let pl' = map (relTo lib) pl
-  renderST t [("dirs",  D.directories pl'),
-              ("songs", sortBy cmp (D.songs pl'))]
+  renderST t [("dirs",  filter PL.isDirectory pl'),
+              ("songs", filter PL.isSong pl')]
   where
-    relTo lib (D.Directory f) = D.Directory (makeRelative lib f)
-    relTo lib s@(D.Song f _ _ _ _ _) = s { D.songPath = makeRelative lib f }
-
-    -- songs are sorted by album then track number
-    album = D.songAlbum
-    track = D.songTrack
-    cmp a b | album a == album b = track a `compare` track b
-            | otherwise          = album a `compare` album b
+    relTo lib (DirEntry fp) =
+      DirEntry (makeRelative lib fp)
+    relTo lib (SongEntry s@Song { songPath = fp }) =
+      SongEntry s { songPath = makeRelative lib fp }
 
 renderPlayer :: Handler
 renderPlayer = do
-  env    <- askEnvironment
-  config <- askConfig >>= liftIO . readConfig
-  let lib     = configLibrary config
-      ignored = configIgnored config
-      exts    = configExts config
-      fp      = lib </> makeRelative "/" (unpack $ pathInfo env)
-  d <- liftIO (doesDirectoryExist fp)
+  env     <- askEnvironment
+  config  <- askConfig >>= liftIO . readConfig
+  Just sd <- currentSession
+
+  fp <- liftIO . canonicalizePath $
+        (configLibrary config) </>
+        makeRelative "/" (unpack $ pathInfo env)
+  d  <- liftIO (doesDirectoryExist fp)
   if d then do
-    pl <- liftIO $ catch (playlist fp ignored exts) (const (return []))
+    let pl = PL.lookup fp (sessionPlaylist sd)
+    liftIO $ putStrLn fp
     renderPlaylist (if isXhr env then "playlist" else "player") pl
     else mzero
 

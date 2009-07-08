@@ -14,7 +14,8 @@ import Text.StringTemplate.Classes (ToSElem(..), SElem(..))
 import System.FilePath
 import Network.Wai
 import qualified Network.URI as URI
-import qualified Solanin.Data as D
+import Solanin.Song (Song(..))
+import Solanin.Playlist (PlaylistEntry(..))
 import Solanin.Server.Util
 import Solanin.State
 import Solanin.Validate
@@ -34,8 +35,8 @@ instance ToSElem Config where
                      ("exts", toSElem exts),
                      ("bitrate", toSElem bitrate)]
 
-instance ToSElem D.PlaylistEntry where
-  toSElem (D.Song path track title artist album duration) =
+instance ToSElem Song where
+  toSElem (Song path track title artist album duration) = 
     SM $ M.fromList [("song", STR $ escapeFileURL path),
                      ("track", STR $ trackToString track),
                      ("title", if null title then
@@ -58,7 +59,9 @@ instance ToSElem D.PlaylistEntry where
         s' = s - m*60
         in show m ++ ":" ++ (if s' < 10 then "0" else "") ++ show s'
 
-  toSElem (D.Directory d) =
+instance ToSElem PlaylistEntry where
+  toSElem (SongEntry s) = toSElem s
+  toSElem (DirEntry  d) =
     SM $ M.fromList [("directory", STR $ escapeFileURL d),
                      ("basename", STR $ takeFileName d ++ "/")]
 

@@ -5,13 +5,13 @@ module Solanin.Server.Handler where
 import qualified Data.ByteString.Char8 as C
 import Control.Monad.Maybe
 import Control.Monad.Reader
+import Control.Concurrent.STM (TVar)
 import Network.Wai
 import Solanin.Server.Util
 import Solanin.State
 
-type Handler = ReaderT (Environment, State)
-                       (MaybeT IO)
-                       (Int, C.ByteString, Headers, Enumerator)
+type HandlerT a = ReaderT (Environment, State) (MaybeT IO) a
+type Handler    = HandlerT (Int, C.ByteString, Headers, Enumerator)
 
 method :: Method -> Handler -> Handler
 method m h = do
@@ -47,15 +47,30 @@ authenticated' b h h' = do
   cookies <- liftM parseCookies' askEnvironment
   case lookup "sid" cookies of
     Just sid -> do
-     auth <- askSessions >>= liftIO . (readSession sid)
-     case auth of
-       Just auth' -> if auth' == b then h else mzero
-       Nothing    -> h'
+     sd <- askSessions >>= liftIO . (readSession sid)
+     case sd of
+       Just sd' -> if (sessionLoggedIn sd') == b then h else mzero
+       Nothing  -> h'
     Nothing  -> if b then mzero else h
 
 authenticated :: Bool -> Handler -> Handler
 authenticated b h = authenticated' b h (if b then mzero else h)
 
+currentSession :: HandlerT (Maybe SessionData)
+currentSession = do
+  cookies <- liftM parseCookies' askEnvironment
+  case lookup "sid" cookies of
+    Just sid -> askSessions >>= liftIO . (readSession sid)
+    Nothing  -> return Nothing
+
+askEnvironment :: HandlerT Environment
 askEnvironment = asks fst
-askConfig      = liftM fst (asks snd)
-askSessions    = liftM snd (asks snd)
+
+askConfig :: HandlerT (TVar Config)
+askConfig = liftM stateConfig (asks snd)
+
+askSessions :: HandlerT (TVar Sessions)
+askSessions = liftM stateSessions (asks snd)
+
+askIndex :: HandlerT (TVar Index)
+askIndex = liftM stateIndex (asks snd)
