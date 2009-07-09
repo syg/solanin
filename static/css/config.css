@@ -15,8 +15,8 @@ table.fields {
 	margin: 0;
 }
 
-#refresh-index {
-	height: 220px;
+#rebuild-index {
+	height: 200px;
 }
 
 #progress {

@@ -30,7 +30,7 @@ solanin = do
   msum [prefix "/_s" (method Get (fileServer staticDir)),
         setup False (msum [path "/_c" configHandlers,
                            path "/_p" (method Post newPassword),
-                           path "/_b" (method Post refreshIndex)]),
+                           path "/_b" (method Post rebuildIndexH)]),
 
         setup False (return seeSetup),
         -- After this point we must be set up.
@@ -41,7 +41,7 @@ solanin = do
         path "/_x" logout,
         path "/_c" configHandlers,
         path "/_p" passwdHandlers,
-        path "/_b" (method Post refreshIndex),
+        path "/_b" rIndexHandlers,
         method Get renderPlayer,
         method Get transcodeServer]
   where
@@ -57,6 +57,8 @@ solanin = do
                            method Post configure]
     passwdHandlers = msum [method Get (renderNewPassword []),
                            method Post newPassword]
+    rIndexHandlers = msum [method Get renderRebuildIndex,
+                           method Post rebuildIndexH]
 
 renderConfig :: [(String, Validation (Maybe String))] -> Handler
 renderConfig validations = do
@@ -66,8 +68,8 @@ renderConfig validations = do
            [("config",      STB config),
             ("validations", STB (M.fromList validations))]
 
-refreshIndex :: Handler
-refreshIndex = do
+rebuildIndexH :: Handler
+rebuildIndexH = do
   env     <- askEnvironment
   config  <- askConfig >>= liftIO . readConfig
   index   <- askIndex
@@ -85,11 +87,15 @@ refreshIndex = do
           False -> return (seeOther "/")
         else renderNewPassword []
 
-renderRefreshIndex :: Handler
-renderRefreshIndex = do
+renderRebuildIndex :: Handler
+renderRebuildIndex = do
   env    <- askEnvironment
-  renderST (if isXhr env then "refreshIndexProgress" else "refreshIndex")
-           ([] :: [(String, String)])
+  if queryString env == Just (pack "confirmed") then
+    renderST (if isXhr env then "rebuildIndexProgress" else "rebuildIndex")
+             ([] :: [(String, String)])
+    else renderST (if isXhr env then "rebuildIndexConfirmForm"
+                     else "rebuildIndexConfirm")
+                  ([] :: [(String, String)])
 
 configure :: Handler
 configure = do
@@ -114,7 +120,7 @@ configure = do
                               configExts    = exts,
                               configBitrate = bitrate }) config
       saveConfig config
-    renderRefreshIndex
+    renderRebuildIndex
     else renderConfig vs
   where
     -- If there is no FFmpeg binary available, or if the FFmpeg provided

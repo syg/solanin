@@ -399,6 +399,21 @@ function Solanin() {
 		});
 	}
 
+	this.doRebuildConfirmForm = function(a) {
+		var fc = $("#footer-content");
+		fc.find("#rebuild-confirm-form").submit(function() {
+			$.ajax({
+				type: "GET",
+				url: $(this).attr("action"),
+				success: function(data, ts) {
+					fc.html(data);
+				}
+			});
+
+			return false;
+		});
+	}
+
 	this.doConfigForm = function(a) {
 		var fc = $("#footer-content");
 		fc.find("#config-form").submit(function() {
@@ -474,6 +489,7 @@ function Solanin() {
 					$(".tabs > a").removeClass("selected");
 					a.addClass("selected");
 					fc.html(data);
+					sl.doRebuildConfirmForm(a);
 					sl.doConfigForm(a);
 					sl.doPasswordForm(a);
 					sl.doFormCancel();

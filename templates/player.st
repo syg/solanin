@@ -72,7 +72,7 @@
    press <span class="cmd">?</span> for keyboard shortcuts
   </div>
   <div class="tabs">
-   <a href="/_c">Configure</a><a href="/_p">Change Password</a><a href="/_x">Logout</a>
+   <a href="/_b">Rebuild Index</a><a href="/_c">Configure</a><a href="/_p">Change Password</a><a href="/_x">Logout</a>
   </div>
  </div>
 </body>
