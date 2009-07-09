@@ -12,6 +12,7 @@ Data-Files:
   static/css/*.css
   static/img/*.png
   static/js/*.js
+  static/js/jquery.color.js
   static/swf/*.swf
   templates/*.st
 
