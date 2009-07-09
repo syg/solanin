@@ -22,6 +22,7 @@ module Solanin.State (State(..),
                       Index(..),
                       emptyIndex,
                       buildIndex,
+                      rebuildIndex,
                       queryIndex,
                       newIndex,
                       saveIndex,
@@ -148,17 +149,6 @@ instance JSON Config where
 configFile :: IO FilePath
 configFile = getHomeDirectory >>= return . (</> ".solanin/config")
 
-dummyConfig :: Config
-dummyConfig = Config
-  { configSetup    = False
-  , configLibrary  = "/home/shu/music"
-  , configIgnored  = ["scans"]
-  , configFFmpeg   = Nothing
-  , configExts     = [".mp3", ".flac"]
-  , configBitrate  = 128
-  , configPassword = ""
-  }
-
 emptyConfig :: Config
 emptyConfig = Config
   { configSetup    = False
@@ -232,8 +222,8 @@ instance Monoid DirSnapshot where
 -- Internal data structure to rebuild the index.
 data IndexChange = AddSong         Song
                  | UnionIndex      Index
-                 | RemoveSong      FilePath
-                 | RemoveDirectory FilePath
+                 | RemoveSong      ByteString
+                 | RemoveDirectory ByteString
   deriving (Show, Eq)
 
 -- Internal data structure used to do queries.
@@ -325,8 +315,7 @@ rebuildIndex config idx = do
     else do
       let snapshot = indexSnapshot index
       mdirs  <- filterM isModified (T.toList snapshot)
-      hPutStrLn stderr ("rebuilding index, " ++ show (length mdirs) ++
-                        " directories changed")
+      hPutStrLn stderr "rebuilding index"
       index' <- foldrM (rescanDirectory snapshot) index mdirs
       atomically $ writeTVar idx index'
   where
@@ -335,13 +324,13 @@ rebuildIndex config idx = do
       if de then do
         mtime' <- getModificationTime (U.toString fp)
         return $ mtime' > mtime
-        else return False
+        else return True
 
     changeNew fs snapshot (fp, mtime') =
       case M.lookup fp fs of
         Just mtime -> if mtime' > mtime then do
           s <- open exts fp
-          let rm = RemoveSong fp
+          let rm = RemoveSong (U.fromString fp)
           return $ maybe [rm] (\s' -> [rm, AddSong s']) s
           else return []
         Nothing    ->
@@ -362,27 +351,26 @@ rebuildIndex config idx = do
       case M.lookup fp fs' of
         Just _  -> []
         Nothing -> case T.keys (T.submap (U.fromString fp) songs) of
-          []  -> throw (userError ("internal index error: " ++ fp))
-          [s] -> [RemoveSong fp]
-          _   -> [RemoveDirectory fp]
+          [s] -> [RemoveSong (U.fromString fp)]
+          _   -> throw (userError ("internal index error: " ++ fp))
 
     rescanDirectory snapshot (fp, DirSnapshot _ fs) index = do
-      hPutStrLn stderr ("  " ++ U.toString fp ++ "...")
-      fs'   <- scanDirectory igs (U.toString fp) >>= mapM snapshotPair
-      news  <- mapM (changeNew fs snapshot) fs'
-      mtime <- getModificationTime (U.toString fp)
-      let sfs  = [ U.toString k | k <- T.keys (T.submap fp snapshot) ]
-          rms  = map (changeRemove (M.fromList fs') (indexSongs index))
-                     (M.keys fs ++ filter immediateChild sfs)
-          chgs = concat news ++ concat rms
-      ds <- mapM snapshotPairSong [ s | AddSong s <- chgs ]
-      let snapshot' = T.insert fp (DirSnapshot mtime (M.fromList ds)) T.empty
-          index'    = songsToIndex [ s | AddSong s <- chgs ] lib snapshot'
-          index''   = foldr unionIndex index' [ i | UnionIndex i <- chgs ]
-      putStrLn $ show chgs
-      return $ unionIndex (pruneIndex index chgs) index''
-      where
-        immediateChild d = takeDirectory d == U.toString fp
+      de <- doesDirectoryExist (U.toString fp)
+      hPutStrLn stderr ((if de then "  [~] " else "  [-] ") ++
+                        U.toString fp ++ "...")
+      if de then do
+        fs'   <- scanDirectory igs (U.toString fp) >>= mapM snapshotPair
+        news  <- mapM (changeNew fs snapshot) fs'
+        mtime <- getModificationTime (U.toString fp)
+        let rms  = map (changeRemove (M.fromList fs') (indexSongs index))
+                       (M.keys fs)
+            chgs = concat news ++ concat rms
+        ds <- mapM snapshotPairSong [ s | AddSong s <- chgs ]
+        let snapshot' = T.insert fp (DirSnapshot mtime (M.fromList ds)) T.empty
+            index'    = songsToIndex [ s | AddSong s <- chgs ] lib snapshot'
+            index''   = foldr unionIndex index' [ i | UnionIndex i <- chgs ]
+        return $ unionIndex (pruneIndex index chgs) index''
+        else return $ pruneIndex index [RemoveDirectory fp]
 
     pruneIndex index [] = index
     pruneIndex index (c:cs) = case c of
@@ -395,23 +383,24 @@ rebuildIndex config idx = do
         index'    = Index lib snapshot' songs' titles' artists' albums'
         in pruneIndex index' cs
       RemoveDirectory fp -> let
-        ks        = T.keys (T.submap (U.fromString fp) songs)
-        snapshot' = T.delete (U.fromString fp) snapshot
+        ks        = T.keys (T.submap fp songs)
+        snapshot' = T.delete fp snapshot
         index'    = Index lib snapshot' songs titles artists albums
-        in pruneIndex index' ([ RemoveSong (U.toString k) | k <- ks ] ++ cs)
+        in pruneIndex index' ([ RemoveSong k | k <- ks ] ++ cs)
       _ -> pruneIndex index cs
       where
         rmFromSnapshot fp = T.adjust f k snapshot
           where
-            k = U.fromString (takeDirectory fp)
-            f (DirSnapshot mt fs) = DirSnapshot mt (M.delete fp fs)
-        rmFromSongs fp = T.delete (U.fromString fp) songs
+            fp' = U.toString fp
+            k = U.fromString (takeDirectory fp')
+            f (DirSnapshot mt fs) = DirSnapshot mt (M.delete fp' fs)
+        rmFromSongs fp = T.delete fp songs
         rmFromConcord fp kf c =
           foldr (T.update f) c [ normalizeKey k | k <- kf s ]
           where
-          Just s = T.lookup (U.fromString fp) songs
+          Just s = T.lookup fp songs
           f s = if S.null s' then Nothing else Just s'
-            where s' = S.delete (U.fromString fp) s
+            where s' = S.delete fp s
 
         lib      = indexLibrary  index
         snapshot = indexSnapshot index
@@ -436,7 +425,7 @@ buildIndex' :: Config -> FilePath -> IO Index
 buildIndex' config d = loop d
   where
     loop d = do
-      hPutStrLn stderr ("  " ++ d ++ "...")
+      hPutStrLn stderr ("  [+] " ++ d ++ "...")
       fs    <- scanDirectory igs d
       mtime <- getModificationTime d
       dirs  <- filterM doesDirectoryExist fs
@@ -457,7 +446,9 @@ buildIndex' config d = loop d
     igs  = configIgnored config
 
 buildIndex :: Config -> IO (TVar Index)
-buildIndex config = buildIndex' config lib >>= atomically . newTVar
+buildIndex config = do
+  hPutStrLn stderr "building index"
+  buildIndex' config lib >>= atomically . newTVar
   where
     lib  = configLibrary config
 

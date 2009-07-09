@@ -259,5 +259,6 @@ serve h state = Hyena.serve $ \env -> do
     Nothing -> return notFound
   where
     unescapeEnv env = env
-      { pathInfo    = (pack . unescape . unpack) (pathInfo env),
-        queryString = liftM (pack . unescape . unpack) (queryString env) }
+      { pathInfo    = (pack . unescape . unpack) (pathInfo env)
+      , queryString = liftM (pack . unescape . unpack) (queryString env)
+      }
