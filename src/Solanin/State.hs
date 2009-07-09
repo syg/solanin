@@ -341,8 +341,8 @@ rebuildIndex config idx = do
             Nothing -> do
               isd <- doesDirectoryExist fp
               if isd then do
-                idx <- buildIndex' config fp
-                return [UnionIndex idx]
+                idx' <- buildIndex' config fp
+                return [UnionIndex idx']
                 else do
                   s <- open exts fp
                   return $ maybe [] (\s' -> [AddSong s']) s
@@ -351,7 +351,7 @@ rebuildIndex config idx = do
       case M.lookup fp fs' of
         Just _  -> []
         Nothing -> case T.keys (T.submap (U.fromString fp) songs) of
-          [s] -> [RemoveSong (U.fromString fp)]
+          [_] -> [RemoveSong (U.fromString fp)]
           _   -> throw (userError ("internal index error: " ++ fp))
 
     rescanDirectory snapshot (fp, DirSnapshot _ fs) index = do
@@ -380,12 +380,12 @@ rebuildIndex config idx = do
         titles'   = rmFromConcord  fp (words . songTitle)  titles
         artists'  = rmFromConcord  fp (words . songArtist) artists
         albums'   = rmFromConcord  fp (words . songAlbum)  albums
-        index'    = Index lib snapshot' songs' titles' artists' albums'
+        index'    = Index ilib snapshot' songs' titles' artists' albums'
         in pruneIndex index' cs
       RemoveDirectory fp -> let
         ks        = T.keys (T.submap fp songs)
         snapshot' = T.delete fp snapshot
-        index'    = Index lib snapshot' songs titles artists albums
+        index'    = Index ilib snapshot' songs titles artists albums
         in pruneIndex index' ([ RemoveSong k | k <- ks ] ++ cs)
       _ -> pruneIndex index cs
       where
@@ -395,14 +395,14 @@ rebuildIndex config idx = do
             k = U.fromString (takeDirectory fp')
             f (DirSnapshot mt fs) = DirSnapshot mt (M.delete fp' fs)
         rmFromSongs fp = T.delete fp songs
-        rmFromConcord fp kf c =
-          foldr (T.update f) c [ normalizeKey k | k <- kf s ]
+        rmFromConcord fp kf conc =
+          foldr (T.update f) conc [ normalizeKey k | k <- kf s ]
           where
           Just s = T.lookup fp songs
-          f s = if S.null s' then Nothing else Just s'
-            where s' = S.delete fp s
+          f ss = if S.null ss' then Nothing else Just ss'
+            where ss' = S.delete fp ss
 
-        lib      = indexLibrary  index
+        ilib     = indexLibrary  index
         snapshot = indexSnapshot index
         songs    = indexSongs    index
         titles   = indexTitles   index
@@ -422,7 +422,7 @@ rebuildIndex config idx = do
     igs  = configIgnored config
 
 buildIndex' :: Config -> FilePath -> IO Index
-buildIndex' config d = loop d
+buildIndex' config r = loop r
   where
     loop d = do
       hPutStrLn stderr ("  [+] " ++ d ++ "...")

@@ -32,11 +32,11 @@ solanin = do
                            path "/_p" (method Post newPassword)]),
 
         setup False (return seeSetup),
-        -- after this point we must be set up
+        -- After this point we must be set up.
         path "/_l" loginHandlers,
-        -- invalid sessions are removed
+        -- Invalid sessions are removed.
         authenticated' False (return seeLogin) removeSession,
-        -- after this point we must be logged in
+        -- After this point we must be logged in.
         path "/_x" logout,
         path "/_c" configHandlers,
         path "/_p" passwdHandlers,
@@ -79,6 +79,7 @@ configure = do
         ffmpeg  = fromJust (lookup "ffmpeg" vs')
         bitrate = (read . fromJust2) (lookup "bitrate" vs')
     config <- askConfig
+    -- oldLib <- liftIO (readConfig config) >>= return . configLibrary
     liftIO $ do
       exts <- supportedExts ffmpeg
       adjustConfig (\c -> c { configLibrary = library,
@@ -97,8 +98,8 @@ configure = do
       else renderNewPassword []
     else renderConfig vs
   where
-    -- if there is no FFmpeg binary available, or if the FFmpeg provided
-    -- cannot encode mp3s, we can only support passthrough mp3s
+    -- If there is no FFmpeg binary available, or if the FFmpeg provided
+    -- cannot encode mp3s, we can only support passthrough mp3s.
     supportedExts Nothing    = return [".mp3"]
     supportedExts (Just bin) = do
       formats <- ffmpegFormats bin

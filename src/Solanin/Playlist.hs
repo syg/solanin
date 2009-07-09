@@ -57,9 +57,3 @@ isDirectory _ = False
 isSong :: PlaylistEntry -> Bool
 isSong (SongEntry _) = True
 isSong _ = False
-
-directories :: [PlaylistEntry] -> [FilePath]
-directories xs = [ d | DirEntry d <- xs ]
-
-songs :: [PlaylistEntry] -> [Song]
-songs xs = [ s | SongEntry s <- xs ]
