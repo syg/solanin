@@ -21,10 +21,10 @@ module Solanin.State (State(..),
 
                       Index(..),
                       emptyIndex,
-                      buildIndex,
                       rebuildIndex,
                       queryIndex,
                       newIndex,
+                      readIndex,
                       saveIndex,
                       loadIndex) where
 
@@ -45,7 +45,7 @@ import Data.Digest.Pure.SHA
 import Codec.Compression.GZip
 import Text.JSON
 import Text.ParserCombinators.Parsec hiding (State)
-import Control.Exception (throw)
+import Control.Exception (throw, evaluate)
 import Control.Monad (liftM, liftM2, replicateM, filterM)
 import Control.Concurrent.STM
 import System.IO
@@ -311,7 +311,7 @@ rebuildIndex :: Config -> TVar Index -> IO ()
 rebuildIndex config idx = do
   index <- atomically (readTVar idx)
   if configLibrary config /= indexLibrary index then
-    error $ "need to rebuild: " ++ (indexLibrary index)
+    buildIndex config idx
     else do
       let snapshot = indexSnapshot index
       mdirs  <- filterM isModified (T.toList snapshot)
@@ -445,18 +445,21 @@ buildIndex' config r = loop r
     exts = configExts    config
     igs  = configIgnored config
 
-buildIndex :: Config -> IO (TVar Index)
-buildIndex config = do
+buildIndex :: Config -> TVar Index -> IO ()
+buildIndex config idx = do
   hPutStrLn stderr "building index"
-  buildIndex' config lib >>= atomically . newTVar
+  buildIndex' config lib >>= atomically . (writeTVar idx)
   where
-    lib  = configLibrary config
+    lib = configLibrary config
 
 normalizeKey :: String -> ByteString
 normalizeKey = U.fromString . (map toLower)
 
 newIndex :: IO (TVar Index)
 newIndex = atomically $ newTVar emptyIndex
+
+readIndex :: TVar Index -> IO Index
+readIndex = atomically . readTVar
 
 queryIndex :: String -> TVar Index -> IO (S.Set Song)
 queryIndex q i = (atomically . readTVar) i >>=
@@ -496,5 +499,7 @@ saveIndex x = do
 loadIndex :: IO (TVar Index)
 loadIndex = do
   fp <- indexFile
-  x  <- liftM (B.decode . decompress) (L.readFile fp)
-  atomically $ newTVar x
+  bs <- L.readFile fp
+  -- Force entire stream to be consumed.
+  evaluate $ L.length bs
+  atomically $ newTVar (B.decode (decompress bs))

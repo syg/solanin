@@ -42,6 +42,7 @@ a {
 
 #footer-content {
 	display: none;
+	text-align: center;
 }
 
 .update-success {
@@ -49,7 +50,6 @@ a {
 }
 
 #footer-content p {
-	text-align: center;
 	color: #ccc;
 	padding: 0 2em;
 }

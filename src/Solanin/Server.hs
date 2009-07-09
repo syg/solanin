@@ -29,7 +29,8 @@ solanin = do
 
   msum [prefix "/_s" (method Get (fileServer staticDir)),
         setup False (msum [path "/_c" configHandlers,
-                           path "/_p" (method Post newPassword)]),
+                           path "/_p" (method Post newPassword),
+                           path "/_b" (method Post refreshIndex)]),
 
         setup False (return seeSetup),
         -- After this point we must be set up.
@@ -40,6 +41,7 @@ solanin = do
         path "/_x" logout,
         path "/_c" configHandlers,
         path "/_p" passwdHandlers,
+        path "/_b" (method Post refreshIndex),
         method Get renderPlayer,
         method Get transcodeServer]
   where
@@ -64,6 +66,31 @@ renderConfig validations = do
            [("config",      STB config),
             ("validations", STB (M.fromList validations))]
 
+refreshIndex :: Handler
+refreshIndex = do
+  env     <- askEnvironment
+  config  <- askConfig >>= liftIO . readConfig
+  index   <- askIndex
+  if null (configLibrary config) then
+    return (serverError "cannot build index before configuring library")
+    else do
+      liftIO $ do
+        rebuildIndex config index
+        saveIndex index
+      if configSetup config then
+        case isXhr env of
+          -- TODO better way of communicating success without something as
+          --      all-out as JSON?
+          True  -> return (ok nothingHeaders sendNothing)
+          False -> return (seeOther "/")
+        else renderNewPassword []
+
+renderRefreshIndex :: Handler
+renderRefreshIndex = do
+  env    <- askEnvironment
+  renderST (if isXhr env then "refreshIndexProgress" else "refreshIndex")
+           ([] :: [(String, String)])
+
 configure :: Handler
 configure = do
   env  <- askEnvironment
@@ -79,7 +106,6 @@ configure = do
         ffmpeg  = fromJust (lookup "ffmpeg" vs')
         bitrate = (read . fromJust2) (lookup "bitrate" vs')
     config <- askConfig
-    -- oldLib <- liftIO (readConfig config) >>= return . configLibrary
     liftIO $ do
       exts <- supportedExts ffmpeg
       adjustConfig (\c -> c { configLibrary = library,
@@ -88,14 +114,7 @@ configure = do
                               configExts    = exts,
                               configBitrate = bitrate }) config
       saveConfig config
-    config' <- liftIO (readConfig config)
-    if configSetup config' then
-      case isXhr env of
-        -- TODO better way of communicating success without something as
-        --      all-out as JSON?
-        True  -> return (ok nothingHeaders sendNothing)
-        False -> return (seeOther "/")
-      else renderNewPassword []
+    renderRefreshIndex
     else renderConfig vs
   where
     -- If there is no FFmpeg binary available, or if the FFmpeg provided
@@ -248,7 +267,6 @@ renderPlayer = do
   d  <- liftIO (doesDirectoryExist fp)
   if d then do
     let pl = PL.lookup fp (sessionPlaylist sd)
-    liftIO $ putStrLn fp
     renderPlaylist (if isXhr env then "playlist" else "player") pl
     else mzero
 
