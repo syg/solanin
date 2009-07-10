@@ -79,18 +79,24 @@ rebuildIndexH = do
       liftIO $ do
         rebuildIndex config index
         saveIndex index
+      -- Refresh the default playlist.
+      let Just sid = lookup "sid" (parseCookies' env)
+      sd <- mkSessionData True ""
+      askSessions >>= liftIO . (writeSession sid sd)
       if configSetup config then
         case isXhr env of
-          -- TODO better way of communicating success without something as
-          --      all-out as JSON?
-          True  -> return (ok nothingHeaders sendNothing)
+          True  -> do
+            fp <- liftIO . canonicalizePath $ (configLibrary config)
+            renderPlaylist "playlist" $ PL.lookup fp (sessionPlaylist sd)
           False -> return (seeOther "/")
         else renderNewPassword []
 
 renderRebuildIndex :: Handler
 renderRebuildIndex = do
   env    <- askEnvironment
-  if queryString env == Just (pack "confirmed") then
+  config <- askConfig >>= liftIO . readConfig
+  if not (configSetup config) ||
+     queryString env == Just (pack "confirmed") then
     renderST (if isXhr env then "rebuildIndexProgress" else "rebuildIndex")
              ([] :: [(String, String)])
     else renderST (if isXhr env then "rebuildIndexConfirmForm"
@@ -194,16 +200,16 @@ newPassword = do
         True  -> return (ok (strHeaders "") (sendString ""))
         False -> return (seeOther "/")
       else do
-        sd  <- newSessionData True
+        sd  <- mkSessionData True ""
         sid <- askSessions >>= liftIO . (writeNewSession sd)
         let cookie = cookieHeader (mkCookie Nothing ("sid", sid))
         return (withHeaders [cookie] (seeOther "/"))
     else renderNewPassword vs
 
-newSessionData :: Bool -> HandlerT SessionData
-newSessionData b = do
+mkSessionData :: Bool -> String -> HandlerT SessionData
+mkSessionData b q = do
   lib   <- liftM configLibrary (askConfig >>= liftIO . readConfig)
-  songs <- askIndex >>= liftIO . (queryIndex "")
+  songs <- askIndex >>= liftIO . (queryIndex q)
   return $ SessionData
     { sessionLoggedIn = b
     , sessionPlaylist = PL.fromSet lib songs
@@ -231,7 +237,7 @@ login = do
             askSessions >>= liftIO . (adjustSession sid f)
             return (seeOther "/")
           Nothing  -> do
-            sd  <- newSessionData True
+            sd  <- mkSessionData True ""
             sid <- askSessions >>= liftIO . (writeNewSession sd)
             let cookie = cookieHeader (mkCookie Nothing ("sid", sid))
             return (withHeaders [cookie] (seeOther "/"))
@@ -270,11 +276,9 @@ renderPlayer = do
   fp <- liftIO . canonicalizePath $
         (configLibrary config) </>
         makeRelative "/" (unpack $ pathInfo env)
-  d  <- liftIO (doesDirectoryExist fp)
-  if d then do
-    let pl = PL.lookup fp (sessionPlaylist sd)
-    renderPlaylist (if isXhr env then "playlist" else "player") pl
-    else mzero
+  case PL.lookup fp (sessionPlaylist sd) of
+    [] -> mzero
+    pl -> renderPlaylist (if isXhr env then "playlist" else "player") pl
 
 serve :: Handler -> State -> IO ()
 serve h state = Hyena.serve $ \env -> do

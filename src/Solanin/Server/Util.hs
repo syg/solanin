@@ -4,7 +4,9 @@ module Solanin.Server.Util where
 
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as C
+import qualified Codec.Binary.UTF8.String as U
 import Data.Either
+import Data.Char (toLower)
 import Data.Maybe (catMaybes)
 import Data.List (intercalate, lookup)
 import Text.ParserCombinators.Parsec
@@ -189,6 +191,20 @@ unescape = unEscapeString . unplus
     unplus []      = ""
     unplus ('+':s) = ' ' : unplus s
     unplus (  c:s) =   c : unplus s
+
+normalizeString :: String -> String
+normalizeString = map (n . toLower) . U.decodeString
+  where
+    n c | c >= '\224' && c <= '\229' = 'a'
+        | c == '\231'                = 'c'
+        | c >= '\232' && c <= '\235' = 'e'
+        | c >= '\236' && c <= '\239' = 'i'
+        | c == '\241'                = 'n'
+        | c >= '\242' && c <= '\246' = 'o'
+        | c == '\248'                = 'o'
+        | c >= '\249' && c <= '\252' = 'u'
+        | c == '\253' || c == '\255' = 'y'
+        | otherwise                  = c
 
 isXhr :: Environment -> Bool
 isXhr env =

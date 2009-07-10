@@ -4,12 +4,10 @@ import qualified Data.ByteString.UTF8 as U
 import qualified Data.Trie as T
 import qualified Data.Trie.Convenience as T
 import qualified Data.Set as S
-import Data.Binary
-import Control.Monad (liftM)
-import Control.Exception (throw)
 import System.FilePath
 import System.IO
 import Solanin.Song
+import Solanin.Server.Util (normalizeString)
 
 data PlaylistEntry = SongEntry Song
                    | DirEntry FilePath
@@ -21,17 +19,9 @@ instance Ord PlaylistEntry where
   compare (SongEntry x) (SongEntry y) = x `compare` y
   compare (DirEntry  _) (SongEntry _) = LT
   compare (SongEntry _) (DirEntry  _) = GT
-  compare (DirEntry  x) (DirEntry  y) = x `compare` y
-
-instance Binary PlaylistEntry where
-  put (SongEntry s) = put (0 :: Word8) >> put s
-  put (DirEntry  d) = put (1 :: Word8) >> put d
-  get = do
-    tag <- getWord8
-    case tag of
-      0 -> liftM SongEntry get
-      1 -> liftM DirEntry get
-      _ -> throw (userError "wrong PlaylistEntry tag")
+  compare (DirEntry  x) (DirEntry  y) = n x `compare` n y
+    where
+      n = normalizeString
 
 fromSet :: FilePath -> S.Set Song -> Playlist
 fromSet root ss = fmap S.toAscList (S.fold f T.empty ss)

@@ -5,10 +5,15 @@ $(document).ready(function() {
 		type: "POST",
 		url: "/_b",
 		success: function(data, ts) {
-			if(data == "") {
-				window.location.reload();
-			} else {
+			if($("#config").length > 0) {
 				$("#config").html(data);
+			} else {
+				var fc = $("#footer-content");
+				$("#playlist").html(data);
+
+				$(".tabs > a").removeClass("selected");
+				fc.empty();
+				fc.hide();
 			}
 		}
 	});

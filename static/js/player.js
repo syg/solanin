@@ -422,13 +422,9 @@ function Solanin() {
 				url: $(this).attr("action"),
 				data: $(this).serialize(),
 				success: function(data, ts) {
-					if(data == "") {
-						window.location.reload();
-					} else {
-						fc.html(data);
-						sl.doConfigForm(a);
-						sl.doFormCancel();
-					}
+					fc.html(data);
+					sl.doConfigForm(a);
+					sl.doFormCancel();
 				}
 			});
 

@@ -9,6 +9,7 @@ import Data.Binary
 import qualified Sound.TagLib as TagLib
 import System.Directory
 import System.FilePath
+import Solanin.Server.Util (normalizeString)
 
 data Song = Song
   { songPath     :: FilePath
@@ -25,7 +26,7 @@ instance Ord Song where
               | otherwise  = a x `compare` a y
     where
       p = songPath
-      a = songAlbum
+      a = normalizeString . songAlbum
       t = songTrack
 
 instance Binary Song where

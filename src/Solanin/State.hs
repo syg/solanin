@@ -38,7 +38,7 @@ import qualified Data.Map as M
 import qualified Data.Binary as B
 import Data.Foldable (foldrM)
 import Data.Monoid
-import Data.Char (toLower, isSpace)
+import Data.Char (isSpace)
 import Data.List ((\\))
 import Data.Maybe (catMaybes, fromJust)
 import Data.Digest.Pure.SHA
@@ -55,6 +55,7 @@ import System.FilePath ((</>), takeDirectory)
 import System.Time
 import Solanin.Song
 import Solanin.Playlist hiding (lookup)
+import Solanin.Server.Util (normalizeString)
 
 data State = State
   { stateConfig   :: TVar Config
@@ -453,7 +454,7 @@ buildIndex config idx = do
     lib = configLibrary config
 
 normalizeKey :: String -> ByteString
-normalizeKey = U.fromString . (map toLower)
+normalizeKey = U.fromString . normalizeString
 
 newIndex :: IO (TVar Index)
 newIndex = atomically $ newTVar emptyIndex
