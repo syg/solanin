@@ -6,4 +6,4 @@ UI
 Backend
 =======
  - how the hell do I get Unicode working on Windows?
- - long-term: fulltext search
+ - make query string more sophisticated
