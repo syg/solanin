@@ -51,6 +51,10 @@
     </div>
    </div>
   </div>
+  <form id="search" action="/" method="POST">
+   <input class="search" type="text" name="q" value="" />
+   <input class="hidden" type="submit" value="login" />
+  </form>
   <div id="hack-header"></div>
  </div>
  <div id="content">

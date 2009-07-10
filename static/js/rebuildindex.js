@@ -9,8 +9,13 @@ $(document).ready(function() {
 				$("#config").html(data);
 			} else {
 				var fc = $("#footer-content");
-				$("#playlist").html(data);
-				solanin.initialize();
+				var pl = $("#playlist");
+
+				pl.html(data);
+				solanin.doDirs(pl);
+				solanin.doSongs(pl);
+				solanin.overflowEllipsis(pl);
+
 				$(".tabs > a").removeClass("selected");
 				fc.empty();
 				fc.hide();

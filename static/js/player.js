@@ -24,9 +24,7 @@ function Solanin() {
 	sm.url = "/_s/swf/";
 	sm.debugMode = false;
 	sm.useHighPerformance = true;
-	sm.onload = function() { sl.initialize(); }
-
-	this.initialize = function() {
+	sm.onload = function() {
 		pl = $("#playlist");
 		/* add callbacks for all dirs and songs */
 		sl.doDirs(pl);
@@ -34,6 +32,7 @@ function Solanin() {
 		sl.overflowEllipsis(pl);
 		sl.doKeybinds();
 		sl.doOptions();
+    sl.doSearch();
 		sl.scrollPlaying();
 
 		/* seeking and dragging */
@@ -496,6 +495,25 @@ function Solanin() {
 					fc.show();
 				});
 			}
+
+			return false;
+		});
+	}
+
+	this.doSearch = function() {
+		$("#search").submit(function() {
+			$.ajax({
+				type: "POST",
+				url: $(this).attr("action"),
+				data: $(this).serialize(),
+				success: function(data, ts) { 
+					var pl = $("#playlist");
+					pl.html(data);
+					sl.doDirs(pl);
+					sl.doSongs(pl);
+					sl.overflowEllipsis(pl);
+				}
+			});
 
 			return false;
 		});

@@ -42,6 +42,7 @@ solanin = do
         path "/_c" configHandlers,
         path "/_p" passwdHandlers,
         path "/_b" rIndexHandlers,
+        path "/" (method Post search),
         method Get renderPlayer,
         method Get transcodeServer]
   where
@@ -59,6 +60,18 @@ solanin = do
                            method Post newPassword]
     rIndexHandlers = msum [method Get (renderRebuildIndex False),
                            method Post rebuildIndexH]
+
+search :: Handler
+search = do
+  env  <- askEnvironment
+  form <- liftIO (decodeForm env)
+  sd   <- case lookup "q" form of
+    Just q  -> mkSessionData True q
+    Nothing -> mkSessionData True ""
+  let Just sid = lookup "sid" (parseCookies' env)
+  liftIO $ putStrLn $ show form
+  askSessions >>= liftIO . (writeSession sid sd)
+  renderPlayer
 
 renderConfig :: [(String, Validation (Maybe String))] -> Handler
 renderConfig validations = do
@@ -274,9 +287,8 @@ renderPlayer = do
   fp <- liftIO . canonicalizePath $
         (configLibrary config) </>
         makeRelative "/" (unpack $ pathInfo env)
-  case PL.lookup fp (sessionPlaylist sd) of
-    [] -> mzero
-    pl -> renderPlaylist (if isXhr env then "playlist" else "player") pl
+  let pl = PL.lookup fp (sessionPlaylist sd)
+  renderPlaylist (if isXhr env then "playlist" else "player") pl
 
 serve :: Handler -> State -> IO ()
 serve h state = Hyena.serve $ \env -> do

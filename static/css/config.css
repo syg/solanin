@@ -84,6 +84,20 @@ input.text {
 	-webkit-border-radius: 3px;
 }
 
+input.search {
+	font: 16px Lucida Grande, Segoe UI, sans-serif;
+	width: 20em;
+  color: black;
+  background-color: white;
+	border: 2px solid #ccc;
+	padding: 5px;
+  padding-left: 10px;
+  padding-right: 10px;
+	border-radius: 20px;
+	-moz-border-radius: 20px;
+	-webkit-border-radius: 20px;
+}
+
 input.button {
 	font: 14px Lucida Grande, Segoe UI, sans-serif;
 	font-weight: bold;
@@ -112,4 +126,8 @@ input.save:hover {
 
 input.cancel:hover {
 	border-bottom: 4px solid red;
+}
+
+input.hidden {
+  display: none;
 }
