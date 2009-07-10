@@ -16,13 +16,13 @@ table.fields {
 }
 
 #rebuild-index {
-	height: 200px;
+	height: 160px;
 }
 
 #progress {
 	position: relative;
-	top: -80px;
-	font-size: 200px;
+	top: -45px;
+	font-size: 100px;
 }
 
 #progress span.hidden {

@@ -57,7 +57,7 @@ solanin = do
                            method Post configure]
     passwdHandlers = msum [method Get (renderNewPassword []),
                            method Post newPassword]
-    rIndexHandlers = msum [method Get renderRebuildIndex,
+    rIndexHandlers = msum [method Get (renderRebuildIndex False),
                            method Post rebuildIndexH]
 
 renderConfig :: [(String, Validation (Maybe String))] -> Handler
@@ -91,12 +91,10 @@ rebuildIndexH = do
           False -> return (seeOther "/")
         else renderNewPassword []
 
-renderRebuildIndex :: Handler
-renderRebuildIndex = do
-  env    <- askEnvironment
-  config <- askConfig >>= liftIO . readConfig
-  if not (configSetup config) ||
-     queryString env == Just (pack "confirmed") then
+renderRebuildIndex :: Bool -> Handler
+renderRebuildIndex override = do
+  env <- askEnvironment
+  if override || queryString env == Just (pack "confirmed") then
     renderST (if isXhr env then "rebuildIndexProgress" else "rebuildIndex")
              ([] :: [(String, String)])
     else renderST (if isXhr env then "rebuildIndexConfirmForm"
@@ -126,7 +124,7 @@ configure = do
                               configExts    = exts,
                               configBitrate = bitrate }) config
       saveConfig config
-    renderRebuildIndex
+    renderRebuildIndex True
     else renderConfig vs
   where
     -- If there is no FFmpeg binary available, or if the FFmpeg provided

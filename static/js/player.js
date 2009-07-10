@@ -1,5 +1,7 @@
+var solanin = null;
+
 $(document).ready(function() {
-	new Solanin();
+	solanin = new Solanin();
 });
 
 function Solanin() {
@@ -22,7 +24,9 @@ function Solanin() {
 	sm.url = "/_s/swf/";
 	sm.debugMode = false;
 	sm.useHighPerformance = true;
-	sm.onload = function() {
+	sm.onload = function() { sl.initialize(); }
+
+	this.initialize = function() {
 		pl = $("#playlist");
 		/* add callbacks for all dirs and songs */
 		sl.doDirs(pl);

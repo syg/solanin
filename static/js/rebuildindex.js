@@ -10,7 +10,7 @@ $(document).ready(function() {
 			} else {
 				var fc = $("#footer-content");
 				$("#playlist").html(data);
-
+				solanin.initialize();
 				$(".tabs > a").removeClass("selected");
 				fc.empty();
 				fc.hide();
