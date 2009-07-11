@@ -63,15 +63,17 @@ solanin = do
 
 search :: Handler
 search = do
-  env  <- askEnvironment
-  form <- liftIO (decodeForm env)
-  sd   <- case lookup "q" form of
+  env    <- askEnvironment
+  config <- askConfig >>= liftIO . readConfig
+  form   <- liftIO (decodeForm env)
+  sd     <- case lookup "q" form of
     Just q  -> mkSessionData True q
     Nothing -> mkSessionData True ""
   let Just sid = lookup "sid" (parseCookies' env)
-  liftIO $ putStrLn $ show form
   askSessions >>= liftIO . (writeSession sid sd)
-  renderPlayer
+  fp <- liftIO . canonicalizePath $ configLibrary config
+  renderPlaylist (if isXhr env then "playlist" else "player") $
+                 PL.lookup fp (sessionPlaylist sd)
 
 renderConfig :: [(String, Validation (Maybe String))] -> Handler
 renderConfig validations = do
@@ -287,8 +289,9 @@ renderPlayer = do
   fp <- liftIO . canonicalizePath $
         (configLibrary config) </>
         makeRelative "/" (unpack $ pathInfo env)
-  let pl = PL.lookup fp (sessionPlaylist sd)
-  renderPlaylist (if isXhr env then "playlist" else "player") pl
+  case PL.lookup fp (sessionPlaylist sd) of
+    [] -> mzero
+    pl -> renderPlaylist (if isXhr env then "playlist" else "player") pl
 
 serve :: Handler -> State -> IO ()
 serve h state = Hyena.serve $ \env -> do

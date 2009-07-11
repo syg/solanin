@@ -20,6 +20,7 @@ function Solanin() {
 	this.volume = 100;
 	this.volumeStep = 100/15;
 	this.lastVolumePopup = 0;
+	this.inputFocused = false;
 
 	sm.url = "/_s/swf/";
 	sm.debugMode = false;
@@ -30,9 +31,10 @@ function Solanin() {
 		sl.doDirs(pl);
 		sl.doSongs(pl);
 		sl.overflowEllipsis(pl);
+		sl.doInputsNoKeybinds();
 		sl.doKeybinds();
 		sl.doOptions();
-    sl.doSearch();
+		sl.doSearch();
 		sl.scrollPlaying();
 
 		/* seeking and dragging */
@@ -279,11 +281,22 @@ function Solanin() {
 		sl.sounds.pop();
 	}
 
+	this.doInputsNoKeybinds = function() {
+		var inputs = $("input[type='text']");
+
+		inputs.focus(function(e) {
+			sl.inputFocused = true;
+		});
+
+		inputs.blur(function(e) {
+			sl.inputFocused = false;
+		});
+	}
+
 	this.doKeybinds = function() {
-		var fc = $("#footer-content");
 		$(document).keypress(function(e) {
-			/* don't want to trap keyboard shortcuts when editing settings */
-			if(fc.html()) return;
+			/* Don't trap keybinds if we're typing in an input. */
+			if(sl.inputFocused) return;
 
 			switch(e.which) {
 			case 107: /* k */
@@ -488,6 +501,7 @@ function Solanin() {
 					$(".tabs > a").removeClass("selected");
 					a.addClass("selected");
 					fc.html(data);
+					sl.doInputsNoKeybinds();
 					sl.doRebuildConfirmForm(a);
 					sl.doConfigForm(a);
 					sl.doPasswordForm(a);

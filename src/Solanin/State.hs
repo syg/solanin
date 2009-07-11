@@ -293,14 +293,21 @@ scanDirectory igs d =
   liftM (\x -> map (d </>) (x \\ (igs ++ [".", ".."]))) $
   getDirectoryContents d
 
+prefixes :: String -> [String]
+prefixes [] = []
+prefixes s  = s' : prefixes s''
+  where
+    s'  = dropWhile isSpace s
+    s'' = snd (break isSpace s')
+
 songsToIndex :: [Song] -> FilePath -> T.Trie DirSnapshot -> Index
 songsToIndex ss lib snapshot = Index lib snapshot songs titles artists albums
   where
     songs   = T.fromList $
              [ (U.fromString (songPath s), s) | s <- ss ]
-    titles  = fromSongs (words . songTitle)
-    artists = fromSongs (words . songArtist)
-    albums  = fromSongs (words . songAlbum)
+    titles  = fromSongs (prefixes . songTitle)
+    artists = fromSongs (prefixes . songArtist)
+    albums  = fromSongs (prefixes . songAlbum)
 
     fromSongs kf = foldr (T.unionWith S.union) T.empty (map f ss)
       where
@@ -378,9 +385,9 @@ rebuildIndex config idx = do
       RemoveSong fp -> let
         snapshot' = rmFromSnapshot fp
         songs'    = rmFromSongs    fp
-        titles'   = rmFromConcord  fp (words . songTitle)  titles
-        artists'  = rmFromConcord  fp (words . songArtist) artists
-        albums'   = rmFromConcord  fp (words . songAlbum)  albums
+        titles'   = rmFromConcord  fp (prefixes . songTitle)  titles
+        artists'  = rmFromConcord  fp (prefixes . songArtist) artists
+        albums'   = rmFromConcord  fp (prefixes . songAlbum)  albums
         index'    = Index ilib snapshot' songs' titles' artists' albums'
         in pruneIndex index' cs
       RemoveDirectory fp -> let
