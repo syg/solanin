@@ -7,7 +7,7 @@
 </head>
 <body>
  <div id="config">
-  $refreshIndexProgress()$
+  $rebuildIndexProgress()$
  </div>
 </body>
 </html>

@@ -33,7 +33,7 @@ Executable solanin
     binary,
     zlib,
     bytestring,
-    bytestring-trie,
+    bytestring-trie      >= 0.2.1,
     network,
     utf8-string,
     hyena                == 0.1,
