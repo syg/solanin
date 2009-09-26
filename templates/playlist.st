@@ -8,7 +8,7 @@ $endif$
  $dirs:{ d |
   <li class="dir"><a href="$d.directory$">$d.basename$</a></li>
  }$
- $if(songs)$
+ $if(first(songs))$
  <table class="songs">
   <tbody>
   $songs:{ s |

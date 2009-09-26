@@ -5,5 +5,7 @@ UI
 
 Backend
 =======
+ - take a look at canonicalizePath in Server.hs which raises problem when the
+   music folder is unmounted
  - how the hell do I get Unicode working on Windows?
  - make query string more sophisticated
