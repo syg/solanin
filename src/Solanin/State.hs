@@ -7,6 +7,7 @@ module Solanin.State (State(..),
                       writeSession,
                       adjustSession,
                       writeNewSession,
+                      mapSessions,
 
                       Config(..),
                       emptyConfig,
@@ -105,6 +106,11 @@ writeNewSession v s = do
       case M.lookup sid s' of
         Just _  -> return False
         Nothing -> writeTVar s (M.insert sid v s') >> return True
+
+mapSessions :: (SessionData -> SessionData)
+            -> TVar Sessions
+            -> IO ()
+mapSessions f s = atomically $ readTVar s >>= writeTVar s . (M.map f)
 
 --
 -- Config

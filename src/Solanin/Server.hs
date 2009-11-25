@@ -94,10 +94,9 @@ rebuildIndexH = do
       liftIO $ do
         rebuildIndex config index
         saveIndex index
-      -- Refresh the default playlist.
-      let Just sid = lookup "sid" (parseCookies' env)
+      -- Refresh all playlists. (TODO make all sessions refresh somehow?)
       sd <- mkSessionData True ""
-      askSessions >>= liftIO . (writeSession sid sd)
+      askSessions >>= liftIO . (mapSessions (const sd))
       if configSetup config then
         case isXhr env of
           True  -> do
