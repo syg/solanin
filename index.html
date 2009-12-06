@@ -77,7 +77,7 @@
 
  <h2>Install</h2>
 
- <p>Since Solanin is still under early development, the best way to install and try it out is to clone the git repo.</p>
+ <p>Since Solanin is still under development, the best way to install and try it out is to clone the git repo.</p>
  <p>Most of what Solanin depends on is cabalized and on <a href="http://hackage.haskell.org">hackage</a>. Here's a list of packages you need to install:</p>
  <ul class="depends">
   <li>taglib</li>
@@ -90,9 +90,15 @@
  </ul>
  <p>Solanin uses <a href="http://github.com/tibbe/hyena">Hyena</a>, a simple web application container that uses left-fold enumerators. It is also under early development, and the git repo has many fixes that are not yet in the cabal package on hackage. You should clone the repo and install it manually:</p>
  <pre><code>git clone http://github.com/tibbe/hyena
+cd hyena
+cabal install</code></pre>
+ <p>It also uses a version of <a href="http://code.haskell.org/~wren/bytestring-trie">bytestring-trie</a> that is not yet cabalized. You should install it manually:</p>
+ <pre><code>darcs get http://code.haskell.org/~wren/bytestring-trie
+cd bytestring-trie
 cabal install</code></pre>
  <p>After all the dependencies are installed, just clone Solanin as normal and install:</p>
  <pre><code>git clone http://github.com/syg/solanin
+cd solanin
 cabal install</code></pre>
 
  <h2>Running</h2>
