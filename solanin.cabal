@@ -1,5 +1,5 @@
 Name:          solanin
-Version:       0.2.1
+Version:       0.2.2
 Cabal-Version: >= 1.6
 License:       PublicDomain
 License-File:  LICENSE
@@ -38,12 +38,16 @@ Executable solanin
     utf8-string,
     hyena                == 0.1,
     MaybeT,
-    taglib               == 0.1.1,
     SHA,
     HStringTemplate,
     json
 
   Main-Is:               Main.hs
   Hs-Source-Dirs:        src
+  Build-Tools:           c2hs > 0.15
+  Extra-Libraries:       tag_c
+  pkgconfig-depends:     taglib_c
+  Other-Modules:         Solanin.TagLib
+
   GHC-Options:
-    -threaded -Wall -O2 -fno-warn-orphans -fno-warn-missing-signatures
+    -O2 -Wall -fno-warn-orphans -fno-warn-missing-signatures

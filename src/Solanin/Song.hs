@@ -3,12 +3,11 @@ module Solanin.Song (Song(..),
                      open,
                      songExts) where
 
-import qualified Codec.Binary.UTF8.String as U
 import Data.Maybe
 import Data.Binary
-import qualified Sound.TagLib as TagLib
 import System.Directory
 import System.FilePath
+import qualified Solanin.TagLib as TagLib
 import Solanin.Server.Util (normalizeString)
 
 data Song = Song
@@ -57,7 +56,7 @@ open exts f = catch p (const (return Nothing))
       -- ourselves if we can read the file.
       perms <- getPermissions f
       if readable perms && takeExtension f `elem` exts then do
-        tf    <- TagLib.open (U.decodeString f)
+        tf    <- TagLib.open f
         dura  <- tagDuration tf
         let r = return . Just $ Song
                   { songPath     = f
@@ -67,20 +66,16 @@ open exts f = catch p (const (return Nothing))
                   , songAlbum    = ""
                   , songDuration = dura
                   }
-        maybe r (g r dura) tf
+        maybe r (g dura) tf
         else return Nothing
 
     tagDuration (Just tf) = do
       ap <- TagLib.audioProperties tf
-      case ap of
-        Just ap' -> TagLib.duration ap'
-        Nothing  -> return 0
+      TagLib.length ap
     tagDuration Nothing = return 0
 
-    g r duration tf = do
+    g duration tf = do
       t <- TagLib.tag tf
-      maybe r (g' duration) t
-    g' duration t = do
       track  <- TagLib.track t
       title  <- TagLib.title t
       artist <- TagLib.artist t
@@ -89,8 +84,8 @@ open exts f = catch p (const (return Nothing))
       return . Just $ Song
         { songPath     = f
         , songTrack    = track
-        , songTitle    = U.encodeString title
-        , songArtist   = U.encodeString artist
-        , songAlbum    = U.encodeString album
+        , songTitle    = title
+        , songArtist   = artist
+        , songAlbum    = album
         , songDuration = duration
         }
