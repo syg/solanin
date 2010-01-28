@@ -310,7 +310,7 @@ songsToIndex :: [Song] -> FilePath -> T.Trie DirSnapshot -> Index
 songsToIndex ss lib snapshot = Index lib snapshot songs titles artists albums
   where
     songs   = T.fromList $
-             [ (U.fromString (songPath s), s) | s <- ss ]
+              [ (U.fromString (songPath s), s) | s <- ss ]
     titles  = fromSongs (prefixes . songTitle)
     artists = fromSongs (prefixes . songArtist)
     albums  = fromSongs (prefixes . songAlbum)

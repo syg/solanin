@@ -37,8 +37,12 @@ import Foreign.Marshal.Utils
 import Control.Monad (liftM)
 
 {# pointer *TagLib_File as TagFile foreign newtype #}
-{# pointer *TagLib_Tag as Tag foreign newtype #}
-{# pointer *TagLib_AudioProperties as AudioProperties foreign newtype #}
+{# pointer *TagLib_Tag as Tag_ foreign newtype #}
+{# pointer *TagLib_AudioProperties as AudioProperties_ foreign newtype #}
+
+-- Hold on to a reference of TagFile so it doesn't get collected
+data Tag = Tag Tag_ TagFile
+data AudioProperties = AudioProperties AudioProperties_ TagFile
 
 foreign import ccall unsafe "&taglib_file_free"
   taglib_file_free :: FinalizerPtr TagFile
@@ -63,46 +67,48 @@ isValid tf = liftM toBool $
 tag :: TagFile -> IO Tag
 tag tf = do
   tagPtr <- withTagFile tf {# call unsafe taglib_file_tag #}
-  liftM Tag $ newForeignPtr_ tagPtr
+  tag_ <- liftM Tag_ $ newForeignPtr_ tagPtr
+  return $ Tag tag_ tf
 
 title :: Tag -> IO String
-title t = withTag t {# call unsafe taglib_tag_title #} >>= ptfCString
+title (Tag t _) = withTag_ t {# call unsafe taglib_tag_title #} >>= ptfCString
 
 artist :: Tag -> IO String
-artist t = withTag t {# call unsafe taglib_tag_artist #} >>= ptfCString
+artist (Tag t _) = withTag_ t {# call unsafe taglib_tag_artist #} >>= ptfCString
 
 album :: Tag -> IO String
-album t = withTag t {# call unsafe taglib_tag_album #} >>= ptfCString
+album (Tag t _) = withTag_ t {# call unsafe taglib_tag_album #} >>= ptfCString
 
 comment :: Tag -> IO String
-comment t = withTag t {# call unsafe taglib_tag_comment #} >>= ptfCString
+comment (Tag t _) = withTag_ t {# call unsafe taglib_tag_comment #} >>= ptfCString
 
 genre :: Tag -> IO String
-genre t = withTag t {# call unsafe taglib_tag_genre #} >>= ptfCString
+genre (Tag t _) = withTag_ t {# call unsafe taglib_tag_genre #} >>= ptfCString
 
 year :: Tag -> IO Integer
-year t = liftM fromIntegral $ withTag t {# call unsafe taglib_tag_year #}
+year (Tag t _) = liftM fromIntegral $ withTag_ t {# call unsafe taglib_tag_year #}
 
 track :: Tag -> IO Integer
-track t = liftM fromIntegral $ withTag t {# call unsafe taglib_tag_track #}
+track (Tag t _) = liftM fromIntegral $ withTag_ t {# call unsafe taglib_tag_track #}
 
 audioProperties :: TagFile -> IO AudioProperties
 audioProperties tf = do
   apPtr <- withTagFile tf {# call unsafe taglib_file_audioproperties #}
-  liftM AudioProperties $ newForeignPtr_ apPtr
+  ap_ <- liftM AudioProperties_ $ newForeignPtr_ apPtr
+  return $ AudioProperties ap_ tf
 
 length :: AudioProperties -> IO Integer
-length ap = liftM fromIntegral $
-  withAudioProperties ap {# call unsafe taglib_audioproperties_length #}
+length (AudioProperties ap _) = liftM fromIntegral $
+  withAudioProperties_ ap {# call unsafe taglib_audioproperties_length #}
 
 bitrate :: AudioProperties -> IO Integer
-bitrate ap = liftM fromIntegral $
-  withAudioProperties ap {# call unsafe taglib_audioproperties_bitrate #}
+bitrate (AudioProperties ap _) = liftM fromIntegral $
+  withAudioProperties_ ap {# call unsafe taglib_audioproperties_bitrate #}
 
 sampleRate :: AudioProperties -> IO Integer
-sampleRate ap = liftM fromIntegral $
-  withAudioProperties ap {# call unsafe taglib_audioproperties_samplerate #}
+sampleRate (AudioProperties ap _) = liftM fromIntegral $
+  withAudioProperties_ ap {# call unsafe taglib_audioproperties_samplerate #}
 
 channels :: AudioProperties -> IO Integer
-channels ap = liftM fromIntegral $
-  withAudioProperties ap {# call unsafe taglib_audioproperties_channels #}
+channels (AudioProperties ap _) = liftM fromIntegral $
+  withAudioProperties_ ap {# call unsafe taglib_audioproperties_channels #}

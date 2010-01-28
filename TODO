@@ -2,9 +2,12 @@ UI
 ==
  - queues
  - modes (repeat/etc)
+ - remove volume graphic and just leave bar
 
 Backend
 =======
+ - search has problems when you press enter too quickly in succession? need to
+   lock then unlock?
  - take a look at canonicalizePath in Server.hs which raises problem when the
    music folder is unmounted
  - how the hell do I get Unicode working on Windows?
