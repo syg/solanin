@@ -87,15 +87,13 @@ input.text {
 input.search {
 	font: 16px Lucida Grande, Segoe UI, sans-serif;
 	width: 20em;
-  color: black;
-  background-color: white;
-	border: 2px solid #ccc;
+	color: black;
+	background-color: white;
+	border: 2px solid white;
 	padding: 5px;
-  padding-left: 10px;
-  padding-right: 10px;
-	border-radius: 20px;
-	-moz-border-radius: 20px;
-	-webkit-border-radius: 20px;
+	border-radius: 3px;
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
 }
 
 input.button {

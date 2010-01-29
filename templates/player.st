@@ -64,7 +64,6 @@
  </div>
  <div id="volume">
   <div>
-   <img src="/_s/img/loud.png" alt="100%" />
    <div id="volumebar">
     <div id="volumebar-position"></div>
    </div>
