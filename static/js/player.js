@@ -150,22 +150,10 @@ function Solanin() {
 		var d = new Date();
 		var volDiv = $("#volume");
 		var vol = sl.volume;
-		var img = "";
 
 		if(sl.muted) vol = 0;
 
-		if(vol == 0 || sl.muted) {
-			img = "mute.png";
-		} else if(vol > 0 && vol <= 33) {
-			img = "soft.png";
-		} else if(vol > 33 && vol <= 66) {
-			img = "medium.png";
-		} else {
-			img = "loud.png";
-		}
-
-		volDiv.find("img").attr("src", "/_s/img/" + img).attr("alt", vol + "%");
-		$("#volumebar-position").width(vol * 0.99 + "%");
+		$("#volumebar-position").width(vol * 0.996 + "%");
 		volDiv.stop();
 		volDiv.css("opacity", 1);
 		volDiv.show();
