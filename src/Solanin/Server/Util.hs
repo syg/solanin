@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types, ImpredicativeTypes #-}
+{-# LANGUAGE ImpredicativeTypes #-}
 
 module Solanin.Server.Util where
 
@@ -8,7 +8,7 @@ import qualified Codec.Binary.UTF8.String as U
 import Data.Either
 import Data.Char (toLower)
 import Data.Maybe (catMaybes)
-import Data.List (intercalate, lookup)
+import Data.List (intercalate)
 import Text.ParserCombinators.Parsec
 import Network.URI (unEscapeString)
 import Network.Wai
@@ -125,11 +125,16 @@ parseCookies env =
     Nothing -> []
   where
     cookies = do
-      ver <- option "0" (do { v <- reserved "$Version"; semi; return v })
+      ver <- option "0" (do { v <- reserved "$Version";
+                              _ <- semi;
+                              return v })
       sepBy1 (cookie ver) (comma <|> semi)
 
     cookie ver = do
-      (k, v) <- do { k <- name; eq; v <- value; return (k, v) }
+      (k, v) <- do { k <- name;
+                     _ <- eq;
+                     v <- value;
+                     return (k, v) }
       p <- optionMaybe (try (semi >> reserved "$Path"))
       d <- optionMaybe (try (semi >> reserved "$Domain"))
       -- XXX doesn't check Domain

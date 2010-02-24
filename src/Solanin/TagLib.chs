@@ -29,7 +29,6 @@ module Solanin.TagLib (TagFile,
 
 import Prelude hiding (length)
 import Foreign.C
-import Foreign.C.String
 import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc

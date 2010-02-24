@@ -3,8 +3,10 @@
 module Solanin.Server.Handler where
 
 import qualified Data.ByteString.Char8 as C
-import Control.Monad.Maybe
-import Control.Monad.Reader
+import Control.Monad
+import Control.Monad.Trans (liftIO)
+import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Reader
 import Control.Concurrent.STM (TVar)
 import Network.Wai
 import Solanin.Server.Util

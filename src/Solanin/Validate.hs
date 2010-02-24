@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types, ImpredicativeTypes #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Solanin.Validate (Validation(Valid, Invalid),
                          Validator,

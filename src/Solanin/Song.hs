@@ -3,7 +3,6 @@ module Solanin.Song (Song(..),
                      open,
                      songExts) where
 
-import Data.Maybe
 import Data.Binary
 import System.Directory
 import System.FilePath

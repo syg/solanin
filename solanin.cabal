@@ -26,8 +26,8 @@ Executable solanin
     process,
     filepath,
     random,
-    mtl                  >= 1 && < 1.2,
     parsec               >= 2.1.0.0 && < 3.0.0,
+    transformers,
     old-time,
     old-locale,
     binary,
@@ -37,7 +37,6 @@ Executable solanin
     network,
     utf8-string,
     hyena                == 0.1,
-    MaybeT,
     SHA,
     HStringTemplate,
     json

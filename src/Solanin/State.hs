@@ -515,5 +515,5 @@ loadIndex = do
   fp <- indexFile
   bs <- L.readFile fp
   -- Force entire stream to be consumed.
-  evaluate $ L.length bs
+  _  <- evaluate $ L.length bs
   atomically $ newTVar (B.decode (decompress bs))

@@ -10,7 +10,7 @@ import Data.List (intercalate)
 import qualified Data.Map as M
 import Control.Monad.Trans (MonadIO(..))
 import Text.StringTemplate
-import Text.StringTemplate.Classes (ToSElem(..), SElem(..))
+import Text.StringTemplate.Classes (SElem(..))
 import System.FilePath
 import Network.Wai
 import qualified Network.URI as URI

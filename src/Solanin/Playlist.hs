@@ -5,7 +5,6 @@ import qualified Data.Trie as T
 import qualified Data.Trie.Convenience as T
 import qualified Data.Set as S
 import System.FilePath
-import System.IO
 import Solanin.Song
 import Solanin.Server.Util (normalizeString)
 

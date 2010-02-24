@@ -5,8 +5,10 @@ import Data.Char
 import Data.Maybe
 import Data.ByteString.Char8 (pack, unpack)
 import qualified Data.Map as M
-import Control.Monad.Maybe
-import Control.Monad.Reader
+import Control.Monad
+import Control.Monad.Trans (liftIO)
+import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Reader
 import System.Directory
 import System.FilePath
 import System.Process hiding (env)
